@@ -144,8 +144,9 @@ def query_additional_apis(tmdb_id, search_query=None, trackers=None, output_json
 
         console.print(failed_table)
 
+
     # Display Missing Media Types Table
-    if missing_media:
+    if missing_media and not search_query:
         missing_table = Table(title="Missing Media Types", title_style="bold red", border_style="bold white")
         missing_table.add_column("Site", style="bold yellow")
         missing_table.add_column("Missing Media Types", style="bold red")
