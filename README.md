@@ -121,19 +121,19 @@ python main.py --movies --name Godzilla King of the Monsters --search "2160p^Fra
 ```
 1) **Selection Menu:** If only one result is available, it will be automatically selected, and the script will proceed with processing.
 
-![Selection Menu](https://img1.imgoe.download/hrT8Z.png)
+![Selection Menu](https://github.com/RegEdits-TSC/Media-Finder/blob/main/imgs/Selection_Menu.png)
 
 2) **Search Results:** If matches are found for your query, they will be displayed as follows.
 
-![Search Results](https://img1.imgoe.download/hrVts.png)
+![Search Results](https://github.com/RegEdits-TSC/Media-Finder/blob/main/imgs/Search_Results.png)
 
 3) **Failed Sites:** Any sites that encounter errors during processing will be listed here, along with the corresponding failure reasons.
 
-![Failed Sites](https://img1.imgoe.download/hrbfq.png)
+![Failed Sites](https://github.com/RegEdits-TSC/Media-Finder/blob/main/imgs/Failed_Sites.png)
 
 4) **Missing Media Types:** This section will only appear when the `--search` feature is not utilized. It will display a table listing any missing media types along with their corresponding site names.
 
-![Missing Media Types](https://img1.imgoe.download/hrj3m.png)
+![Missing Media Types](https://github.com/RegEdits-TSC/Media-Finder/blob/main/imgs/Missing_Media_Types.png)
 
 > [!IMPORTANT]
 > The `--movies` or `--series` argument, along with either `--name` or `--id`, is required. At least one from each category must be specified; otherwise, the script will return an error and terminate.
