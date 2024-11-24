@@ -25,7 +25,6 @@ parser.add_argument("--movies", "--m", action="store_true", help="Search for mov
 parser.add_argument("--series", "--s", action="store_true", help="Search for TV series.")
 parser.add_argument("--search", type=str, help="Search for specific terms in the name. Separate multiple terms with `^`.")
 parser.add_argument("--json", action="store_true", help="Save JSON responses for each site.")
-parser.add_argument("--env", action="store_true", help="Create an .env file with preset values. Use --overwrite to force overwrite.",)
 parser.add_argument("--overwrite", action="store_true", help="Overwrite the existing .env file if it exists.",)
 args = parser.parse_args()
 

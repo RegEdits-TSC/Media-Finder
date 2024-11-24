@@ -1,5 +1,6 @@
-# Ignore .env file
+# Ignore .env file and logs dir
 .env
+logs/
 
 # Ignore Python bytecode
 __pycache__/
