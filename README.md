@@ -66,50 +66,50 @@ python main.py --env [--overwrite]
 > [!NOTE]
 > If a `.env` file is not detected when the script is executed, a default configuration file will be automatically generated in the `/config` directory.
 
-**Enable Logging:**
-- `--logging`: Enables logging to a file for easier debugging.
-- `--debug`: Enables detailed debug-level logging. (This should only be utilized if troubleshooting assistance is required.)
+- Enable Logging:
+  - `--logging`: Enables logging to a file for easier debugging.
+  - `--debug`: Enables detailed debug-level logging. (This should only be utilized if troubleshooting assistance is required.)
 ```bash
 python main.py --logging
 ```
 
-### Media Search Options:
+**Media Search Options:**
 > [!CAUTION]
 > Since searches rely primarily on the TMDb API and the ID it provides based on the query, improper TMDb IDs assigned to a movie or series by the tracker may lead to unexpected results. Similarly, if a TMDb ID is not set, the search will return "No matching results found."
 
-**Search by TMDb ID:**
-- `--id`: Specify the TMDb ID of the movie or series to search.
+- Search by TMDb ID:
+  - `--id`: Specify the TMDb ID of the movie or series to search.
 ```bash
 python main.py --id 12345
 ```
 
-**Search by Name:**
-- `--name`: Search by the name of the movie or series.
+- Search by Name:
+  - `--name`: Search by the name of the movie or series.
 ```bash
 python main.py --name "Inception"
 ```
 
-### Search by Terms:
-- `--search`: Search for specific terms in the name. Separate multiple terms with `^`.
+- Search by Terms:
+  - `--search`: Search for specific terms in the name. Separate multiple terms with `^`.
 ```bash
 python main.py --search "2160p^FLUX"
 ```
 
-### Search for Movies:
-- `--movies` or `--m`: Specify that the search is for movies.
+- Search for Movies:
+  - `--movies` or `--m`: Specify that the search is for movies.
 ```bash
 python main.py --movies
 ```
 
-### Search for TV Series:
-- `--series` or `--s`: Specify that the search is for TV series.
+- Search for TV Series:
+  - `--series` or `--s`: Specify that the search is for TV series.
 ```bash
 python main.py --series
 ```
 
-### JSON Handling:
-**Save JSON Responses:**
-- `--json`: Save JSON responses from API queries for each site.
+**JSON Handling:**
+- Save JSON Responses:
+  - `--json`: Save JSON responses from API queries for each site.
 ```bash
 python main.py --json
 ```
@@ -117,13 +117,24 @@ python main.py --json
 ### Example Usage
 **Search for a Movie by Name:**
 ```bash
-python main.py --movies --name Godzilla
+python main.py --movies --name Godzilla King of the Monsters --search "2160p^Framestor"
 ```
+1) **Selection Menu:** If only one result is available, it will be automatically selected, and the script will proceed with processing.
 
-Search for a Series by TMDb ID:
-```bash
-python main.py --series --id 124905
-```
+![Selection Menu](https://img1.imgoe.download/hrT8Z.png)
+
+2) **Search Results:** If matches are found for your query, they will be displayed as follows.
+
+![Search Results](https://img1.imgoe.download/hrVts.png)
+
+3) **Failed Sites:** Any sites that encounter errors during processing will be listed here, along with the corresponding failure reasons.
+
+![Failed Sites](https://img1.imgoe.download/hrbfq.png)
+
+4) **Missing Media Types:** This section will only appear when the `--search` feature is not utilized. It will display a table listing any missing media types along with their corresponding site names.
+
+![Missing Media Types](https://img1.imgoe.download/hrj3m.png)
+
 > [!IMPORTANT]
 > The `--movies` or `--series` argument, along with either `--name` or `--id`, is required. At least one from each category must be specified; otherwise, the script will return an error and terminate.
 
