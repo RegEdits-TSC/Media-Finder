@@ -8,5 +8,6 @@ logs/
 __pycache__/
 *.pyc
 
-# Ignore specific folders like 'imgs'
+# Ignore specific folders
 imgs/
+testing/
