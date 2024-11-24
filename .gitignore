@@ -1,7 +1,12 @@
-# Ignore .env file and logs dir
+# Ignore logs, temporary files, and specific files/folders
 .env
 logs/
+*.log
+*.tmp
 
-# Ignore Python bytecode
+# Ignore compiled Python files
 __pycache__/
 *.pyc
+
+# Ignore specific folders like 'imgs'
+imgs/
