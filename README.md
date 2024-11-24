@@ -74,6 +74,9 @@ python main.py --logging
 ```
 
 ### Media Search Options:
+> [!CAUTION]
+> Since searches rely primarily on the TMDb API and the ID it provides based on the query, improper TMDb IDs assigned to a movie or series by the tracker may lead to unexpected results. Similarly, if a TMDb ID is not set, the search will return "No matching results found."
+
 **Search by TMDb ID:**
 - `--id`: Specify the TMDb ID of the movie or series to search.
 ```bash
@@ -121,6 +124,8 @@ Search for a Series by TMDb ID:
 ```bash
 python main.py --series --id 124905
 ```
+> [!IMPORTANT]
+> The `--movies` or `--series` argument, along with either `--name` or `--id`, is required. At least one from each category must be specified; otherwise, the script will return an error and terminate.
 
 ## Configuration
 **All API keys and URLs are managed via the .env file. Below is a template for your .env:**
