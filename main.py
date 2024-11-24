@@ -32,11 +32,11 @@ def main():
     # Setup logging for regular and debug mode
     setup_logging(OUTPUT_DIR, debug_mode=args.debug)
 
-    # Overwrite .env with default values else check if created and create if needed
+    # Overwrite .env with default values
     if args.overwrite:
         create_env_file(overwrite=args.overwrite)
     else:
-        create_env_file()
+        create_env_file() # Create .env file if one is not present
     
     # Validate environment variables
     env_vars = validate_env_vars()
