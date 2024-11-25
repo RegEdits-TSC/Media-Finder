@@ -4,9 +4,8 @@ from rich.console import Console
 
 console = Console()
 
-def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> None:
-    """Create an .env file with preset values if it does not already exist or overwrite is enabled."""
-    env_content = """
+# Define the environment file content
+ENV_CONTENT = """
 # TMDb API Key
 TMDB_API_KEY=
 
@@ -34,21 +33,25 @@ RFX_URL=https://reelflix.xyz/api/torrents/filter
 ULCX_URL=https://upload.cx/api/torrents/filter
 """
 
+def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> None:
+    """Create an .env file with preset values if it does not already exist or overwrite is enabled."""
     file_path = Path(file_path)
 
-    if file_path.exists():
-        if overwrite:
-            message = f"{file_path} exists but will be overwritten."
-            console.print(f"[bold yellow]{message}[/bold yellow]")
-            logging.info(message)
-        else:
-            message = f"{file_path} already exists. Skipping creation."
-            logging.info(message)
-            return
+    if file_path.exists() and not overwrite:
+        message = f"{file_path} already exists. Skipping creation."
+        console.print(f"[bold yellow]{message}[/bold yellow]")
+        logging.info(message)
+        return
+
+    if file_path.exists() and overwrite:
+        message = f"{file_path} exists but will be overwritten."
+        console.print(f"[bold yellow]{message}[/bold yellow]")
+        logging.info(message)
 
     try:
+        # Use a context manager to ensure the file is properly closed
         with file_path.open("w") as file:
-            file.write(env_content)
+            file.write(ENV_CONTENT)
         message = f"{file_path} has been created."
         console.print(f"[bold green]{message}[/bold green]")
         logging.info(message)
