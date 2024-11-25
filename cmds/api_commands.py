@@ -45,7 +45,7 @@ def fetch_details(endpoint, params, tmdb_url=None):
         raise ValueError(f"TMDb API call failed: {str(e)}")
     
 def query_additional_apis(tmdb_id, search_query=None, trackers=None, output_json=None, OUTPUT_DIR=None):
-    """Query additional APIs using the TMDb ID and filter results by search query."""
+    """Query additional APIs using the TMDb ID and filter results by search query if set."""
     failed_sites = {}
     successful_sites = []
     missing_media = {}

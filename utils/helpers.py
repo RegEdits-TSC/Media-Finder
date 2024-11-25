@@ -44,7 +44,7 @@ def display_api_results(response_data, api_name, search_query=None):
             console.print(f"[bold red]{api_name} API Results: No matching results found.[/bold red]")
             return
 
-        table = Table(title=f"{api_name} Results", title_style="bold green", border_style="bold white")
+        table = Table(title=f"{api_name} Results", title_style="bold green", title_justify="center", border_style="bold white")
         table.add_column("Name", style="bold yellow")
         table.add_column("Size", justify="right")
         table.add_column("Seeders", justify="center")
@@ -54,10 +54,10 @@ def display_api_results(response_data, api_name, search_query=None):
         for result in data:
             attributes = result["attributes"]
             name = attributes.get("name", "N/A")
-            size = f"{attributes.get('size', 0) / (1024 ** 3):.2f} GiB"
-            seeders = attributes.get("seeders", 0)
-            leechers = attributes.get("leechers", 0)
-            freeleech = attributes.get("freeleech", "No")
+            size = bytes_to_gib(attributes.get("size", 0))
+            seeders = attributes.get("seeders", "N/A")
+            leechers = attributes.get("leechers", "N/A")
+            freeleech = attributes.get("freeleech", "N/A")
 
             table.add_row(
                 name,
@@ -82,3 +82,9 @@ def search_results(response_data, query):
             filtered_results.append(result)
 
     return filtered_results
+
+def bytes_to_gib(size_in_bytes):
+    """Convert a size in bytes to a human-readable string in GiB."""
+    if not size_in_bytes or size_in_bytes <= 0:
+        return "0.00 GiB"
+    return f"{size_in_bytes / (1024 ** 3):.2f} GiB"
