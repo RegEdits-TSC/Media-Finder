@@ -1,10 +1,8 @@
-import argparse
 import logging
-import os
-from utils.validation import validate_env_vars
-from utils.helpers import display_movie_details
+from pathlib import Path
+from utils.validation import setup_environment, API_KEYS
+from utils.helpers import display_movie_details, parse_arguments
 from utils.logger import setup_logging
-from utils.create_env import create_env_file
 from cmds.processing import select_tmdb_result
 from cmds.api_commands import search_tmdb, query_additional_apis
 from rich.console import Console
@@ -12,34 +10,18 @@ from rich.console import Console
 console = Console()
 
 # Determine the directory of the script and the output folder
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(SCRIPT_DIR, "logs")
+SCRIPT_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = SCRIPT_DIR / "logs"
 
-# Argument parser
-parser = argparse.ArgumentParser(description="Fetch movie/series details from TMDb using a TMDb ID or name.")
-parser.add_argument("--id", type=str, help="The TMDb ID of the movie/series to search. Must be a positive integer.")
-parser.add_argument("--name", type=str, nargs='+', help="The name of the movie/series to search.")
-parser.add_argument("--logging", action="store_true", help="Enable logging to file.")
-parser.add_argument("--debug", action="store_true", help="Enable debug level logging.")
-parser.add_argument("--movies", "--m", action="store_true", help="Search for movies.")
-parser.add_argument("--series", "--s", action="store_true", help="Search for TV series.")
-parser.add_argument("--search", type=str, help="Search for specific terms in the name. Separate multiple terms with `^`.")
-parser.add_argument("--json", action="store_true", help="Save JSON responses for each site.")
-parser.add_argument("--overwrite", action="store_true", help="Overwrite the existing .env file if it exists.",)
-args = parser.parse_args()
+def main() -> None:
+    """Main function to execute the script."""
+    args = parse_arguments()
 
-def main():
-    # Setup logging for regular and debug mode
-    setup_logging(OUTPUT_DIR, debug_mode=args.debug)
+    # Setup logging
+    setup_logging(OUTPUT_DIR, debug_mode=args.debug, sensitive_values=list(API_KEYS.values()))
 
-    # Overwrite .env with default values
-    if args.overwrite:
-        create_env_file(overwrite=args.overwrite)
-    else:
-        create_env_file() # Create .env file if one is not present
-    
-    # Validate environment variables
-    env_vars = validate_env_vars()
+    # Setup environment
+    env_vars = setup_environment(overwrite=args.overwrite)
 
     # Access required variables
     tmdb_api_key = env_vars["required"]["TMDB_API_KEY"]
@@ -53,7 +35,7 @@ def main():
         tracker_name = tracker["name"]
         tracker_code = tracker["code"]
         
-        logging.info(f"{tracker_name} ({tracker_code}) | Using API key [REDACTED] with URL: {url}")
+        logging.info(f"{tracker_name} ({tracker_code}) | Using provided API key with URL: {url}")
 
     search_type = "movie" if args.movies else "tv" if args.series else None
     search_query = args.search

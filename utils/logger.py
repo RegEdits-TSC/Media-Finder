@@ -1,20 +1,67 @@
 import logging
-from datetime import datetime
 import os
+import re
+from pathlib import Path
+from datetime import datetime
 
-# Logger Setup
-def setup_logging(output_dir, debug_mode=False):
-    """Setup logging configuration."""
-    os.makedirs(output_dir, exist_ok=True)
+def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: list = None) -> None:
+    """Setup logging configuration with sensitive information redaction."""
+    class RedactingSensitiveInformation(logging.Formatter):
+        """Formatter that redacts sensitive information in log messages."""
+        def __init__(self, fmt=None, datefmt=None, sensitive_values=None):
+            super().__init__(fmt, datefmt)
+            self.sensitive_values = sensitive_values or []
+
+        def format(self, record):
+            message = super().format(record)
+            # Replace sensitive values in the log message
+            for value in self.sensitive_values:
+                if value:
+                    # Redact only when it's part of an API key query parameter
+                    api_key_pattern = rf"(api_key=){re.escape(value)}"
+                    message = re.sub(api_key_pattern, r"\1[REDACTED]", message)
+            return message
+
+    # Ensure the output directory exists
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    # Setup log filename
+    now = datetime.now()
     log_prefix = "[DEBUG] " if debug_mode else ""
-    log_filename = datetime.now().strftime(f"{log_prefix}media_log-%H_%M_%S_%m_%d_%Y.log")
-    log_filepath = os.path.join(output_dir, log_filename)
+    log_filename = now.strftime(f"{log_prefix}media_log-%H_%M_%S_%m_%d_%Y.log")
+    log_filepath = Path(output_dir) / log_filename
+
+    # Set log level
     log_level = logging.DEBUG if debug_mode else logging.INFO
-    logging.basicConfig(
-        filename=log_filepath,
-        level=log_level,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+
+    # Create a logger
+    logger = logging.getLogger()
+    logger.setLevel(log_level)
+
+    # Create file handler
+    file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
+    file_handler.setLevel(log_level)
+
+    # Create formatter and add it to the handlers
+    formatter = RedactingSensitiveInformation(
+        fmt='%(asctime)s - %(levelname)s - %(message)s',
+        sensitive_values=sensitive_values
     )
-    logging.info("Logging initialized.")
+    file_handler.setFormatter(formatter)
+
+    # Add handlers to the logger
+    if not logger.handlers:
+        logger.addHandler(file_handler)
+
+    # Redacting formatter for urllib3 logs
+    if sensitive_values:
+        urllib3_logger = logging.getLogger("urllib3")
+        urllib3_logger.addHandler(file_handler)
+        urllib3_logger.setLevel(log_level)
+        # Disable propagation to avoid duplicate logs
+        urllib3_logger.propagate = False
+
+    # Log initialization messages
+    logger.info("Logging initialized.")
     if debug_mode:
-        logging.debug("Debug mode enabled. All responses and execution steps will be logged.")
+        logger.debug("Debug mode enabled. All responses and execution steps will be logged.")

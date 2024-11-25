@@ -1,11 +1,10 @@
-import os
 import logging
-import sys
+from pathlib import Path
 from rich.console import Console
 
 console = Console()
 
-def create_env_file(file_path="config/.env", overwrite=False):
+def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> None:
     """Create an .env file with preset values if it does not already exist or overwrite is enabled."""
     env_content = """
 # TMDb API Key
@@ -31,9 +30,11 @@ FNP_URL=https://fearnopeer.com/api/torrents/filter
 OTW_URL=https://oldtoons.world/api/torrents/filter
 RFX_URL=https://reelflix.xyz/api/torrents/filter
 PSS_URL=https://privatesilverscreen.cc/api/torrents/filter
-""".strip()
+"""
 
-    if os.path.exists(file_path):
+    file_path = Path(file_path)
+
+    if file_path.exists():
         if overwrite:
             message = f"{file_path} exists but will be overwritten."
             console.print(f"[bold yellow]{message}[/bold yellow]")
@@ -44,14 +45,12 @@ PSS_URL=https://privatesilverscreen.cc/api/torrents/filter
             return
 
     try:
-        with open(file_path, "w") as file:
+        with file_path.open("w") as file:
             file.write(env_content)
-        message = f"{file_path} has been created successfully. Please update this file with the correct API keys before running the script again."
+        message = f"{file_path} has been created."
         console.print(f"[bold green]{message}[/bold green]")
         logging.info(message)
-        sys.exit(0)  # Exit the script successfully
     except Exception as e:
-        message = f"An error occurred while creating {file_path}: {e}"
+        message = f"Failed to create {file_path}: {e}"
         console.print(f"[bold red]{message}[/bold red]")
         logging.error(message)
-        sys.exit(1)  # Exit with an error status

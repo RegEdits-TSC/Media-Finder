@@ -1,24 +1,25 @@
 import json
 import logging
-import os
+from pathlib import Path
 import requests
 from urllib.parse import urljoin
 from utils.helpers import display_api_results
 from rich.table import Table
 from rich.console import Console
+from typing import Optional, Dict, Any, List
 
 console = Console()
 
-def search_tmdb(search_type, tmdb_api_key=None, tmdb_url=None, tmdb_id=None, name=None):
+def search_tmdb(search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: Optional[str] = None, tmdb_id: Optional[str] = None, name: Optional[List[str]] = None) -> Any:
     """Fetch details by ID or name for movies/series."""
     try:
         if tmdb_id:
-            logging.info(f"Initiating fetch for search_type: {search_type}, TMDb ID: {tmdb_id}")
+            logging.info(f"Initiating fetch for Search Type: {search_type}, TMDb ID: {tmdb_id}")
             endpoint = f"{search_type}/{tmdb_id}"
             params = {"api_key": tmdb_api_key}
             return fetch_details(endpoint, params, tmdb_url=tmdb_url)
         elif name:
-            logging.info(f"Initiating fetch for search_type: {search_type}, Name: {' '.join(name)}")
+            logging.info(f"Initiating fetch for Search Type: {search_type}, Name: {' '.join(name)}")
             endpoint = f"search/{search_type}"
             params = {"api_key": tmdb_api_key, "query": " ".join(name)}
             results = fetch_details(endpoint, params, tmdb_url=tmdb_url).get('results', [])
@@ -31,131 +32,144 @@ def search_tmdb(search_type, tmdb_api_key=None, tmdb_url=None, tmdb_id=None, nam
         logging.error(f"Error in search_tmdb: {str(e)}")
         raise
 
-def fetch_details(endpoint, params, tmdb_url=None):
+def fetch_details(endpoint: str, params: Dict[str, str], tmdb_url: Optional[str] = None) -> Dict[str, Any]:
     """Fetch details from TMDb API."""
     url = urljoin(tmdb_url, endpoint)
+
     try:
-        logging.info(f"Fetching data from endpoint: {url} with params: {params}")
+        logging.info(f"Fetching data from endpoint: {url}")
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         logging.debug(f"Response data: {response.json()}")
         return response.json()
+    except requests.Timeout:
+        logging.error("Request to TMDb API timed out.")
+        raise ValueError("TMDb API call timed out.")
     except requests.RequestException as e:
         logging.error(f"Failed to fetch data from TMDb: {str(e)}")
         raise ValueError(f"TMDb API call failed: {str(e)}")
     
-def query_additional_apis(tmdb_id, search_query=None, trackers=None, output_json=None, OUTPUT_DIR=None):
+def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
     """Query additional APIs using the TMDb ID and filter results by search query if set."""
+    # Initialize dictionaries and lists to track failed sites, successful sites, and missing media types
     failed_sites = {}
     successful_sites = []
     missing_media = {}
-
-    media_types = ["REMUX", "WEB-DL", "Encode"]
-
+    media_types = ["REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"]
     params = {'tmdbId': tmdb_id}
     headers = {'Content-Type': 'application/json'}
 
+    def log_and_continue(tracker_name, reason):
+        """Log a warning and add the tracker to the failed sites dictionary."""
+        logging.warning(f"Skipping {tracker_name}: {reason}")
+        failed_sites[tracker_name] = reason
+
+    def handle_response(tracker_name, response):
+        """Handle the API response, returning the data if valid, otherwise logging an error."""
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            reason = f"Invalid JSON response: {response.text[:100]}..."
+            logging.error(f"{tracker_name} API failed: {reason}")
+            failed_sites[tracker_name] = "Invalid JSON response"
+            return None
+        return data
+
+    def filter_results(data, search_query):
+        """Filter the results based on the search query."""
+        return [
+            item for item in data['data']
+            if all(term.lower() in item['attributes']['name'].lower() for term in search_query.split("^"))
+        ]
+
+    def check_media_types(data, tracker_name):
+        """Check for missing media types in the results."""
+        site_media_types = [item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']]
+        for media_type in media_types:
+            if not any(
+                media_type.lower() in item['attributes']['name'].lower() or
+                media_type.lower() == t.lower()
+                for item in data['data'] for t in site_media_types
+            ):
+                if tracker_name not in missing_media:
+                    missing_media[tracker_name] = []
+                missing_media[tracker_name].append(media_type)
+
+    def export_json(data, tracker_code):
+        """Export the data to a JSON file."""
+        filename = Path(OUTPUT_DIR) / f"{tracker_code}_TMDb_{tmdb_id}.json"
+        with open(filename, "w", encoding="utf-8") as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        logging.info(f"Exported {tracker_name} ({tracker_code}) response to {filename}")
+
     for tracker in trackers:
+        # Extract tracker details
         api_key = tracker["api_key"]
         url = tracker["url"]
         tracker_name = tracker["name"]
         tracker_code = tracker["code"]
         if not api_key:
-            reason = "Missing API key"
-            logging.warning(f"Skipping {tracker_name}: {reason}")
-            failed_sites[tracker_name] = reason
+            # Log and continue if API key is missing
+            log_and_continue(tracker_name, "Missing API key")
             continue
 
         headers['Authorization'] = f"Bearer {api_key}"
 
         try:
-            if search_query:
-                logging.info(f"Querying {tracker_name} for TMDb ID: {tmdb_id} with search query: {search_query}")
-            else:
-                logging.info(f"Querying {tracker_name} for TMDb ID: {tmdb_id}")
+            # Log the query attempt with the API key redacted
+            logging.info(f"Querying {tracker_name} for TMDb ID: {tmdb_id}" + (f" with search query: {search_query}" if search_query else ""))
             response = requests.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
-
-            try:
-                data = response.json()
-            except json.JSONDecodeError:
-                reason = f"Invalid JSON response: {response.text[:100]}..."
-                logging.error(f"{tracker_name} API failed: {reason}")
-                failed_sites[tracker_name] = "Invalid JSON response"
+            data = handle_response(tracker_name, response)
+            if data is None:
                 continue
 
             if data and 'data' in data and data['data']:
-                # Filter results locally if search query exists
                 if search_query:
-                    filtered_results = [
-                        item for item in data['data']
-                        if all(term.lower() in item['attributes']['name'].lower() for term in search_query.split("^"))
-                    ]
+                    # Filter results if search query is provided
+                    filtered_results = filter_results(data, search_query)
                     if not filtered_results:
-                        reason = f"No results matching query '{search_query}'"
-                        logging.info(f"{tracker_name} returned no matching results for TMDb ID {tmdb_id}.")
-                        failed_sites[tracker_name] = reason
+                        log_and_continue(tracker_name, f"No results matching query '{search_query}'")
                         continue
-
                     data['data'] = filtered_results
 
-                # Check for required media types
-                site_media_types = [
-                    item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']
-                ]
-                for media_type in media_types:
-                    if not any(
-                        media_type.lower() in item['attributes']['name'].lower() or
-                        media_type.lower() == t.lower()
-                        for item in data['data'] for t in site_media_types
-                    ):
-                        if tracker_name not in missing_media:
-                            missing_media[tracker_name] = []
-                        missing_media[tracker_name].append(media_type)
+                # Check for missing media types
+                check_media_types(data, tracker_name)
 
-                # Export JSON only if --json argument is passed
                 if output_json:
-                    filename = os.path.join(OUTPUT_DIR, f"{tracker_code}_TMDb_{tmdb_id}.json")
-                    with open(filename, "w", encoding="utf-8") as json_file:
-                        json.dump(data, json_file, ensure_ascii=False, indent=4)
-                    logging.info(f"Exported {tracker_name} ({tracker_code}) response to {filename}")
+                    # Export data to JSON if output_json is True
+                    export_json(data, tracker_code)
 
+                # Display the API results in the console
                 display_api_results(data, tracker_name)
                 successful_sites.append(tracker_name)
                 logging.info(f"{tracker_name} found data for TMDb ID {tmdb_id}.")
             else:
-                reason = "No matching results found"
-                logging.info(f"{tracker_name} returned no data for TMDb ID {tmdb_id}.")
-                failed_sites[tracker_name] = reason
+                # Log and continue if no matching results are found
+                log_and_continue(tracker_name, "No matching results found")
 
         except requests.RequestException as e:
-            reason = f"Request error: {str(e)}"
-            logging.error(f"Error querying {tracker_name}: {reason}")
-            failed_sites[tracker_name] = reason
+            # Log the exception with the API key redacted
+            logging.error(f"Request to {tracker_name} failed: {str(e)}")
 
-    # Display Failed Sites Table
     if failed_sites:
+        # Create a table to display failed sites and their reasons
         failed_table = Table(title="Failed Sites", title_style="bold red", border_style="bold white")
         failed_table.add_column("Site", style="bold yellow")
         failed_table.add_column("Reason", style="bold red")
-
         for site, reason in failed_sites.items():
             failed_table.add_row(site, reason)
-
         console.print(failed_table)
 
-
-    # Display Missing Media Types Table
     if missing_media and not search_query:
+        # Create a table to display sites with missing media types
         missing_table = Table(title="Missing Media Types", title_style="bold red", border_style="bold white")
         missing_table.add_column("Site", style="bold yellow")
         missing_table.add_column("Missing Media Types", style="bold red")
-
         for site, media_types in missing_media.items():
             missing_table.add_row(site, ", ".join(media_types))
-
         console.print(missing_table)
 
-    # Display if no sites are successful
     if not successful_sites:
+        # Print a message if no successful queries were made
         console.print("[bold red]No successful queries.[/bold red]")
