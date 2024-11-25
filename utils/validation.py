@@ -61,7 +61,6 @@ def validate_env_vars():
         if missing_required:
             error_message = f"Missing required environment variables: {', '.join(missing_required)}"
             logging.error(error_message)
-            console.print(f"[bold red]Error:[/bold red] {error_message}")
             raise MissingEnvironmentVariableError(error_message)
 
         # Check for valid tracker API key and URL pairs

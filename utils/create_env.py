@@ -1,10 +1,11 @@
 import logging
 from pathlib import Path
 from rich.console import Console
+import sys
 
 console = Console()
 
-# Define the environment file content
+# Define the environment file content as a constant
 ENV_CONTENT = """
 # TMDb API Key
 TMDB_API_KEY=
@@ -52,10 +53,12 @@ def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> 
         # Use a context manager to ensure the file is properly closed
         with file_path.open("w") as file:
             file.write(ENV_CONTENT)
-        message = f"{file_path} has been created."
+        message = f"{file_path} has been created. Please edit the file with your configuration values and rerun the script."
         console.print(f"[bold green]{message}[/bold green]")
         logging.info(message)
+        sys.exit(0)  # Exit the script after creating the file
     except Exception as e:
         message = f"Failed to create {file_path}: {e}"
         console.print(f"[bold red]{message}[/bold red]")
         logging.error(message)
+        sys.exit(1)  # Exit the script with an error code
