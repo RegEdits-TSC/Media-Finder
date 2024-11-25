@@ -10,6 +10,7 @@ Media-Finder is a Python-based tool designed to streamline the process of search
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
+  - [Example Usage](#example-usage)
 - [Features in Development](#features-in-development)
 - [Contributing](#contributing)
 - [License](#license)
