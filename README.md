@@ -2,6 +2,9 @@
 
 Media-Finder is a Python-based tool designed to streamline the process of searching, querying, and managing media information. It integrates with various APIs (e.g., TMDb, UNIT3D trackers) to provide detailed media metadata and tracker-specific results. This tool is highly customizable and supports .env configuration for secure API key management.
 
+> [!CAUTION]
+> This script is currently in its beta/testing phase and is continuously evolving. If you encounter any errors or issues while using it, please don’t hesitate to reach out or open a pull request. Contributions and feedback are always appreciated.
+
 ![License](https://img.shields.io/github/license/RegEdits-TSC/Media-Finder) ![Issues](https://img.shields.io/github/issues/RegEdits-TSC/Media-Finder) ![Stars](https://img.shields.io/github/stars/RegEdits-TSC/Media-Finder) ![Forks](https://img.shields.io/github/forks/RegEdits-TSC/Media-Finder)
 
 ## Table of Contents
