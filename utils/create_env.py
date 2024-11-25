@@ -15,21 +15,23 @@ TMDB_URL=https://api.themoviedb.org/3/
 
 # Site API Keys
 ATH_API_KEY=
-ULCX_API_KEY=
-LST_API_KEY=
+BLU_API_KEY=
 FNP_API_KEY=
+LST_API_KEY=
 OTW_API_KEY=
-RFX_API_KEY=
 PSS_API_KEY=
+RFX_API_KEY=
+ULCX_API_KEY=
 
 # Site URLs
 ATH_URL=https://aither.cc/api/torrents/filter
-ULCX_URL=https://upload.cx/api/torrents/filter
-LST_URL=https://lst.gg/api/torrents/filter
+BLU_URL=https://blutopia.cc/api/torrents/filter
 FNP_URL=https://fearnopeer.com/api/torrents/filter
+LST_URL=https://lst.gg/api/torrents/filter
 OTW_URL=https://oldtoons.world/api/torrents/filter
-RFX_URL=https://reelflix.xyz/api/torrents/filter
 PSS_URL=https://privatesilverscreen.cc/api/torrents/filter
+RFX_URL=https://reelflix.xyz/api/torrents/filter
+ULCX_URL=https://upload.cx/api/torrents/filter
 """
 
     file_path = Path(file_path)
