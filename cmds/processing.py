@@ -1,6 +1,7 @@
 import logging
 from rich.console import Console
 from rich.table import Table
+from utils.exceptions import NoResultsError, InvalidChoiceError
 
 console = Console()
 
@@ -38,6 +39,9 @@ def get_user_choice(num_results):
 def select_tmdb_result(results):
     """Select a result interactively."""
     try:
+        if not results:
+            raise NoResultsError("No results to process.")
+
         logging.info(f"Processing {len(results)} search results.")
         if len(results) == 1:
             # Automatically select the result if there is only one
@@ -51,8 +55,21 @@ def select_tmdb_result(results):
 
         # Get user choice
         choice_index = get_user_choice(len(results))
-        return results[choice_index] if choice_index is not None else None  # Return the selected result or None
+        if choice_index is None or choice_index < 0 or choice_index >= len(results):
+            raise InvalidChoiceError("Invalid choice made by the user.")
+        return results[choice_index]  # Return the selected result
+
+    except NoResultsError as e:
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise
+
+    except InvalidChoiceError as e:
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise
 
     except Exception as e:
-        logging.error(f"Error in select_tmdb_result: {str(e)}")
-        raise  # Re-raise the exception after logging the error
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        raise

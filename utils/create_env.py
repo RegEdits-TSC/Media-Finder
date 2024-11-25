@@ -2,10 +2,11 @@ import logging
 from pathlib import Path
 from rich.console import Console
 import sys
+from utils.exceptions import EnvFileCreationError
 
 console = Console()
 
-# Define the environment file content as a constant
+# Define the environment file content
 ENV_CONTENT = """
 # TMDb API Key
 TMDB_API_KEY=
@@ -40,7 +41,6 @@ def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> 
 
     if file_path.exists() and not overwrite:
         message = f"{file_path} already exists. Skipping creation."
-        console.print(f"[bold yellow]{message}[/bold yellow]")
         logging.info(message)
         return
 
@@ -57,8 +57,15 @@ def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> 
         console.print(f"[bold green]{message}[/bold green]")
         logging.info(message)
         sys.exit(0)  # Exit the script after creating the file
+    except FileNotFoundError as e:
+        logging.error(f"FileNotFoundError: {str(e)}")
+        raise EnvFileCreationError(file_path, f"File not found: {str(e)}")
+    except PermissionError as e:
+        logging.error(f"PermissionError: {str(e)}")
+        raise EnvFileCreationError(file_path, f"Permission denied: {str(e)}")
+    except IOError as e:
+        logging.error(f"IOError: {str(e)}")
+        raise EnvFileCreationError(file_path, f"I/O error: {str(e)}")
     except Exception as e:
-        message = f"Failed to create {file_path}: {e}"
-        console.print(f"[bold red]{message}[/bold red]")
-        logging.error(message)
-        sys.exit(1)  # Exit the script with an error code
+        logging.error(f"An unexpected error occurred: {str(e)}")
+        raise EnvFileCreationError(file_path, f"An unexpected error occurred: {str(e)}")

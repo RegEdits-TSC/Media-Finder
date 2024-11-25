@@ -6,6 +6,7 @@ from utils.logger import setup_logging
 from cmds.processing import select_tmdb_result
 from cmds.api_commands import search_tmdb, query_additional_apis
 from rich.console import Console
+from utils.exceptions import MissingArgumentError, InvalidTMDbIDError, NoSuitableResultError
 
 console = Console()
 
@@ -42,12 +43,12 @@ def main() -> None:
 
     try:
         if not search_type:
-            raise ValueError("Please specify either --movies or --series to search.")
+            raise MissingArgumentError("Please specify either --movies or --series to search.")
 
         if args.id:
             tmdb_id = args.id.strip()
             if not tmdb_id.isdigit():
-                raise ValueError("TMDb ID must be a positive integer.")
+                raise InvalidTMDbIDError("TMDb ID must be a positive integer.")
             details = search_tmdb(search_type, tmdb_api_key, tmdb_url, tmdb_id=tmdb_id)
         elif args.name:
             name = args.name
@@ -56,14 +57,23 @@ def main() -> None:
             if selected_result:
                 details = search_tmdb(search_type, tmdb_api_key, tmdb_url, tmdb_id=selected_result['id'])
             else:
-                console.print("[bold yellow]No suitable result selected.[/bold yellow]")
-                exit()
+                raise NoSuitableResultError("No suitable result selected.")
         else:
-            raise ValueError("Please specify either --id or --name to search.")
+            raise MissingArgumentError("Please specify either --id or --name to search.")
 
         display_movie_details(details)
         query_additional_apis(details['id'], search_query, trackers, args.json, OUTPUT_DIR)
+    except MissingArgumentError as e:
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+    except InvalidTMDbIDError as e:
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+    except NoSuitableResultError as e:
+        logging.error(str(e))
+        console.print(f"[bold red]Error:[/bold red] {str(e)}")
     except ValueError as e:
+        logging.error(str(e))
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
 
 if __name__ == "__main__":

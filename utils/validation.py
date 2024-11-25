@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from utils.create_env import create_env_file
+from utils.exceptions import MissingEnvironmentVariableError, NoValidTrackersError
 from rich.console import Console
 
 console = Console()
@@ -43,14 +44,6 @@ TRACKER_SITES = [
     ("RFX_API_KEY", "RFX_URL", "ReelFliX", "RFX"),
     ("PSS_API_KEY", "PSS_URL", "PrivateSilverScreen", "PSS")
 ]
-
-class MissingEnvironmentVariableError(Exception):
-    """Exception raised for missing environment variables."""
-    pass
-
-class NoValidTrackersError(Exception):
-    """Exception raised when no valid trackers are found."""
-    pass
 
 def validate_env_vars():
     """Validate that required environment variables are set."""
@@ -106,10 +99,12 @@ def validate_env_vars():
         }
 
     except MissingEnvironmentVariableError as e:
+        logging.error(f"MissingEnvironmentVariableError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except NoValidTrackersError as e:
+        logging.error(f"NoValidTrackersError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 

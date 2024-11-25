@@ -7,6 +7,7 @@ from utils.helpers import display_api_results
 from rich.table import Table
 from rich.console import Console
 from typing import Optional, Dict, Any, List
+from utils.exceptions import NoResultsFoundError
 
 console = Console()
 
@@ -14,22 +15,21 @@ def search_tmdb(search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: 
     """Fetch details by ID or name for movies/series."""
     try:
         if tmdb_id:
-            logging.info(f"Initiating fetch for Search Type: {search_type}, TMDb ID: {tmdb_id}")
+            logging.info(f"Initiating fetch for Search Type {search_type}, TMDb ID: {tmdb_id}")
             endpoint = f"{search_type}/{tmdb_id}"
             params = {"api_key": tmdb_api_key}
             return fetch_details(endpoint, params, tmdb_url=tmdb_url)
         elif name:
-            logging.info(f"Initiating fetch for Search Type: {search_type}, Name: {' '.join(name)}")
+            logging.info(f"Initiating fetch for Search Type {search_type}, Name: {' '.join(name)}")
             endpoint = f"search/{search_type}"
             params = {"api_key": tmdb_api_key, "query": " ".join(name)}
             results = fetch_details(endpoint, params, tmdb_url=tmdb_url).get('results', [])
             if not results:
-                raise ValueError(f"No results found for the name '{' '.join(name)}'.")
+                raise NoResultsFoundError(name)
             return results
-        else:
-            raise ValueError("Invalid input: Provide either TMDb ID or name.")
-    except ValueError as e:
-        logging.error(f"Error in search_tmdb: {str(e)}")
+    except (NoResultsFoundError) as e:
+        console.print(f"[bold red]Error:[/bold red] No results found for {' '.join(name)}")
+        logging.error(f"Error: {str(e)}")
         raise
 
 def fetch_details(endpoint: str, params: Dict[str, str], tmdb_url: Optional[str] = None) -> Dict[str, Any]:
