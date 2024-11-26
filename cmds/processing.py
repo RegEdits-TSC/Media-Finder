@@ -1,4 +1,5 @@
 import logging
+import sys
 from rich.console import Console
 from rich.table import Table
 from utils.exceptions import NoResultsError, InvalidChoiceError
@@ -55,7 +56,11 @@ def select_tmdb_result(results):
 
         # Get user choice
         choice_index = get_user_choice(len(results))
-        if choice_index is None or choice_index < 0 or choice_index >= len(results):
+        if choice_index is None:
+            console.print("[bold yellow]If you're confident that the media exists on TMDb, please verify the spelling of the title.[/bold yellow]")
+            console.print("[bold yellow]TMDb's search functionality considers original, translated, and alternative titles, but accurate spelling ensures optimal search results.[/bold yellow]")
+            sys.exit(0)  # Cleanly exit the script if choice is None
+        if choice_index < 0 or choice_index >= len(results):
             raise InvalidChoiceError("Invalid choice made by the user.")
         return results[choice_index]  # Return the selected result
 
