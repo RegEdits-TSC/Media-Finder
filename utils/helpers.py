@@ -24,23 +24,24 @@ def parse_arguments() -> argparse.Namespace:
 def display_movie_details(details: Dict[str, Any]) -> None:
     """Display movie/series details."""
     try:
-        table = Table(title="Movie/Series Details", title_style="bold green", border_style="bold white")
-        table.add_column("Field", style="bold green", no_wrap=True)
-        table.add_column("Value", style="bold yellow")
-
         title = details.get('title', details.get('name', 'N/A'))
         release_date = details.get('release_date', details.get('first_air_date', 'N/A'))
         genres = ', '.join(genre['name'] for genre in details.get('genres', []))
         runtime = details.get('runtime')
         overview = details.get('overview', 'No overview available.')
 
-        table.add_row("Title", title)
-        table.add_row("Release Year", release_date[:4])
-        table.add_row("Genres", genres)
-        if runtime:
-            table.add_row("Runtime", f"{runtime // 60}h {runtime % 60}m")
-        table.add_row("Overview", overview)
+        # Prepare rows for the table
+        rows = [
+            ("Title", title),
+            ("Release Year", release_date[:4]),
+            ("Genres", genres),
+            ("Runtime", f"{runtime // 60}h {runtime % 60}m" if runtime else "N/A"),
+            ("Overview", overview)
+        ]
 
+        # Create and print the table
+        columns = [("Field", "bold green", "left"), ("Details", "bold yellow", "left")]
+        table = create_table("Movie/Series Details", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
 
         console.print(f"\n[bold yellow]Searching trackers for {title}...[/bold yellow]")
@@ -66,13 +67,8 @@ def display_api_results(response_data, api_name, search_query=None):
             console.print(f"[bold red]{api_name} API Results: No matching results found.[/bold red]")
             return
 
-        table = Table(title=f"{api_name} Results", title_style="bold green", title_justify="center", border_style="bold white")
-        table.add_column("Name", style="bold yellow")
-        table.add_column("Size", justify="right")
-        table.add_column("Seeders", justify="center")
-        table.add_column("Leechers", justify="center")
-        table.add_column("Freeleech", justify="center")
-
+        # Prepare rows for the table
+        rows = []
         for result in data:
             attributes = result["attributes"]
             name = attributes.get("name", "N/A")
@@ -80,15 +76,19 @@ def display_api_results(response_data, api_name, search_query=None):
             seeders = attributes.get("seeders", "N/A")
             leechers = attributes.get("leechers", "N/A")
             freeleech = attributes.get("freeleech", "N/A")
+            rows.append((name, size, str(seeders), str(leechers), freeleech))
 
-            table.add_row(
-                name,
-                size,
-                str(seeders),
-                str(leechers),
-                freeleech
-            )
-
+        # Create and print the table
+        columns = [
+            ("Name", "bold yellow", "left"),
+            ("Size", "bold yellow", "center"),
+            ("Seeders", "bold yellow", "center"),
+            ("Leechers", "bold yellow", "center"),
+            ("Freeleech", "bold yellow", "center")
+        ]
+        table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
+        console.print(table)
+        table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
     except Exception as e:
         logging.error(f"Error displaying {api_name} results: {str(e)}")
@@ -110,3 +110,12 @@ def bytes_to_gib(size_in_bytes):
     if not size_in_bytes or size_in_bytes <= 0:
         return "0.00 GiB"
     return f"{size_in_bytes / (1024 ** 3):.2f} GiB"
+
+def create_table(title, columns, rows, title_style="bold red", border_style="bold white"):
+    """Create a table with the given title, columns, and rows."""
+    table = Table(title=title, title_style=title_style, border_style=border_style)
+    for column, style, justify in columns:
+        table.add_column(column, style=style, justify=justify)
+    for row in rows:
+        table.add_row(*row)
+    return table
