@@ -86,8 +86,7 @@ def display_api_results(response_data, api_name, search_query=None):
             ("Leechers", "bold yellow", "center"),
             ("Freeleech", "bold yellow", "center")
         ]
-        table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
-        console.print(table)
+        
         table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
     except Exception as e:
