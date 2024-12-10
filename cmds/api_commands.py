@@ -3,13 +3,16 @@ import logging
 from pathlib import Path
 import requests
 from urllib.parse import urljoin
-from utils.helpers import display_api_results
+from utils.helpers import create_table, display_api_results
 from rich.table import Table
 from rich.console import Console
 from typing import Optional, Dict, Any, List
 from utils.exceptions import NoResultsFoundError
 
 console = Console()
+
+# Define media types
+MEDIA_TYPES = ["REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"]
 
 def search_tmdb(search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: Optional[str] = None, tmdb_id: Optional[str] = None, name: Optional[List[str]] = None) -> Any:
     """Fetch details by ID or name for movies/series."""
@@ -55,14 +58,8 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
     failed_sites = {}
     successful_sites = []
     missing_media = {}
-    media_types = ["REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"]
     params = {'tmdbId': tmdb_id}
     headers = {'Content-Type': 'application/json'}
-
-    def log_and_continue(tracker_name, reason):
-        """Log a warning and add the tracker to the failed sites dictionary."""
-        logging.warning(f"Skipping {tracker_name}: {reason}")
-        failed_sites[tracker_name] = reason
 
     def handle_response(tracker_name, response):
         """Handle the API response, returning the data if valid, otherwise logging an error."""
@@ -85,7 +82,7 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
     def check_media_types(data, tracker_name):
         """Check for missing media types in the results."""
         site_media_types = [item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']]
-        for media_type in media_types:
+        for media_type in MEDIA_TYPES:
             if not any(
                 media_type.lower() in item['attributes']['name'].lower() or
                 media_type.lower() == t.lower()
@@ -110,7 +107,9 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
         tracker_code = tracker["code"]
         if not api_key:
             # Log and continue if API key is missing
-            log_and_continue(tracker_name, "Missing API key")
+            reason = "Missing API key"
+            logging.warning(f"Skipping {tracker_name}: {reason}")
+            failed_sites[tracker_name] = reason
             continue
 
         headers['Authorization'] = f"Bearer {api_key}"
@@ -129,7 +128,9 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
                     # Filter results if search query is provided
                     filtered_results = filter_results(data, search_query)
                     if not filtered_results:
-                        log_and_continue(tracker_name, f"No results matching query '{search_query}'")
+                        reason = f"No results matching query '{search_query}'"
+                        logging.info(f"{tracker_name} failed: {reason}")
+                        failed_sites[tracker_name] = reason
                         continue
                     data['data'] = filtered_results
 
@@ -146,7 +147,9 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
                 logging.info(f"{tracker_name} found data for TMDb ID {tmdb_id}.")
             else:
                 # Log and continue if no matching results are found
-                log_and_continue(tracker_name, "No matching results found")
+                reason = "No matching results"
+                logging.info(f"{tracker_name} failed: {reason}")
+                failed_sites[tracker_name] = reason
 
         except requests.RequestException as e:
             # Log the exception with the API key redacted
@@ -154,20 +157,16 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
 
     if failed_sites:
         # Create a table to display failed sites and their reasons
-        failed_table = Table(title="Failed Sites", title_style="bold red", border_style="bold white")
-        failed_table.add_column("Site", style="bold yellow")
-        failed_table.add_column("Reason", style="bold red")
-        for site, reason in failed_sites.items():
-            failed_table.add_row(site, reason)
+        failed_columns = [("Site", "bold yellow", "left"), ("Reason", "bold red", "left")]
+        failed_rows = [(site, reason) for site, reason in failed_sites.items()]
+        failed_table = create_table("Failed Sites", failed_columns, failed_rows)
         console.print(failed_table)
 
     if missing_media and not search_query:
         # Create a table to display sites with missing media types
-        missing_table = Table(title="Missing Media Types", title_style="bold red", border_style="bold white")
-        missing_table.add_column("Site", style="bold yellow")
-        missing_table.add_column("Missing Media Types", style="bold red")
-        for site, media_types in missing_media.items():
-            missing_table.add_row(site, ", ".join(media_types))
+        missing_columns = [("Site", "bold yellow", "left"), ("Missing Media Types", "bold red", "left")]
+        missing_rows = [(site, ", ".join(media_types)) for site, media_types in missing_media.items()]
+        missing_table = create_table("Missing Media Types", missing_columns, missing_rows)
         console.print(missing_table)
 
     if not successful_sites:
