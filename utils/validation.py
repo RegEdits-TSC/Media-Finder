@@ -15,6 +15,7 @@ load_dotenv(dotenv_path=Path("config/.env"))
 API_KEYS = {
     "TMDB_API_KEY": os.getenv("TMDB_API_KEY"),
     "ATH_API_KEY": os.getenv('ATH_API_KEY'),
+    "BLU_API_KEY": os.getenv('BLU_API_KEY'),
     "ULCX_API_KEY": os.getenv('ULCX_API_KEY'),
     "LST_API_KEY": os.getenv('LST_API_KEY'),
     "FNP_API_KEY": os.getenv('FNP_API_KEY'),
@@ -25,6 +26,7 @@ API_KEYS = {
 
 URLS = {
     "TMDB_URL": os.getenv('TMDB_URL'),
+    "BLU_URL": os.getenv('BLU_URL'),
     "ATH_URL": os.getenv('ATH_URL'),
     "ULCX_URL": os.getenv('ULCX_URL'),
     "LST_URL": os.getenv('LST_URL'),
@@ -37,6 +39,7 @@ URLS = {
 # List of tracker sites with their corresponding API key and URL environment variable names, names, and codes
 TRACKER_SITES = [
     ("ATH_API_KEY", "ATH_URL", "Aither", "ATH"),
+    ("BLU_API_KEY", "BLU_URL", "Blutopia", "BLU"),
     ("ULCX_API_KEY", "ULCX_URL", "Upload.cx", "ULCX"),
     ("LST_API_KEY", "LST_URL", "L0ST", "LST"),
     ("FNP_API_KEY", "FNP_URL", "FearNoPeer", "FNP"),
