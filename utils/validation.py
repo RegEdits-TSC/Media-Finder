@@ -53,7 +53,7 @@ TRACKER_SITES = [
     ("ULCX_API_KEY", "ULCX_URL", "Upload.cx", "ULCX")
 ]
 
-def validate_env_vars():
+def validate_env_vars(logger: logging.Logger) -> dict:
     """Validate that required environment variables are set."""
     try:
         # Check for missing required API keys and URLs
@@ -61,7 +61,7 @@ def validate_env_vars():
         missing_required = [key for key in required_keys if not os.getenv(key)]
         if missing_required:
             error_message = f"Missing required environment variables: {', '.join(missing_required)}"
-            logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
+            logger.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
             raise MissingEnvironmentVariableError(missing_required)
 
         # Check for valid tracker API key and URL pairs
@@ -82,7 +82,7 @@ def validate_env_vars():
                 "At least one valid tracker API key and URL pair is required "
                 f"from: {', '.join([f'{name} ({code})' for _, _, name, code in TRACKER_SITES])}"
             )
-            logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
+            logger.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
             raise NoValidTrackersError(error_message)
 
         # Log disabled trackers due to missing or empty values
@@ -92,12 +92,12 @@ def validate_env_vars():
             if not os.getenv(api_key) or not os.getenv(url) or os.getenv(api_key) == "" or os.getenv(url) == ""
         ]
         if disabled_trackers:
-            logging.warning(
+            logger.warning(
                 f"{LOG_PREFIX_VALIDATE} The following trackers are disabled due to missing or empty values: "
                 + ", ".join([f"{tracker['name']} ({tracker['code']})" for tracker in disabled_trackers])
             )
 
-        logging.info(f"{LOG_PREFIX_VALIDATE} Environment variables validated successfully.")
+        logger.info(f"{LOG_PREFIX_VALIDATE} Environment variables validated successfully.")
 
         # Return validated environment variables and trackers
         return {
@@ -106,23 +106,23 @@ def validate_env_vars():
         }
 
     except MissingEnvironmentVariableError as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} MissingEnvironmentVariableError: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} MissingEnvironmentVariableError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except NoValidTrackersError as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} NoValidTrackersError: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} NoValidTrackersError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except Exception as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} An unexpected error occurred: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} An unexpected error occurred: {str(e)}")
         console.print(f"[bold red]An unexpected error occurred:[/bold red] {str(e)}")
         raise
 
-def setup_environment(overwrite: bool) -> dict:
+def setup_environment(overwrite: bool, logger: logging.Logger) -> dict:
     """Setup the environment by creating or validating the .env file."""
     # Create or overwrite the .env file
-    create_env_file(overwrite=overwrite)
+    create_env_file(logger, overwrite=overwrite)
     # Validate the environment variables
-    return validate_env_vars()
+    return validate_env_vars(logger)

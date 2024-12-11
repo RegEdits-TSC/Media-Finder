@@ -15,45 +15,45 @@ console = Console()
 # Define media types
 MEDIA_TYPES = ["REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"]
 
-def search_tmdb(search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: Optional[str] = None, tmdb_id: Optional[str] = None, name: Optional[List[str]] = None) -> Any:
+def search_tmdb(logger: logging.Logger, search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: Optional[str] = None, tmdb_id: Optional[str] = None, name: Optional[List[str]] = None) -> Any:
     """Fetch details by ID or name for movies/series."""
     try:
         if tmdb_id:
-            logging.info(f"{LOG_PREFIX_FETCH} Initiating fetch for Search Type {search_type}, TMDb ID: {tmdb_id}")
+            logger.info(f"{LOG_PREFIX_FETCH} Initiating fetch for Search Type {search_type}, TMDb ID: {tmdb_id}")
             endpoint = f"{search_type}/{tmdb_id}"
             params = {"api_key": tmdb_api_key}
-            return fetch_details(endpoint, params, tmdb_url=tmdb_url)
+            return fetch_details(logger, endpoint, params, tmdb_url=tmdb_url)
         elif name:
-            logging.info(f"{LOG_PREFIX_FETCH} Initiating fetch for Search Type {search_type}, Name: {' '.join(name)}")
+            logger.info(f"{LOG_PREFIX_FETCH} Initiating fetch for Search Type {search_type}, Name: {' '.join(name)}")
             endpoint = f"search/{search_type}"
             params = {"api_key": tmdb_api_key, "query": " ".join(name)}
-            results = fetch_details(endpoint, params, tmdb_url=tmdb_url).get('results', [])
+            results = fetch_details(logger, endpoint, params, tmdb_url=tmdb_url).get('results', [])
             if not results:
                 raise NoResultsFoundError(name)
             return results
     except (NoResultsFoundError) as e:
         console.print(f"[bold red]Error:[/bold red] No results found for {' '.join(name)}")
-        logging.error(f"{LOG_PREFIX_FETCH} TMDb Error: {str(e)}")
+        logger.error(f"{LOG_PREFIX_FETCH} TMDb Error: {str(e)}")
         raise
 
-def fetch_details(endpoint: str, params: Dict[str, str], tmdb_url: Optional[str] = None) -> Dict[str, Any]:
+def fetch_details(logger: logging.Logger, endpoint: str, params: Dict[str, str], tmdb_url: Optional[str] = None) -> Dict[str, Any]:
     """Fetch details from TMDb API."""
     url = urljoin(tmdb_url, endpoint)
 
     try:
-        logging.info(f"{LOG_PREFIX_FETCH} Fetching data from endpoint: {url}")
+        logger.info(f"{LOG_PREFIX_FETCH} Fetching data from endpoint: {url}")
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
-        logging.debug(f"{LOG_PREFIX_RESULT} Response data: {response.json()}")
+        logger.debug(f"{LOG_PREFIX_RESULT} Response data: {response.json()}")
         return response.json()
     except requests.Timeout:
-        logging.error(f"{LOG_PREFIX_FETCH} Request to TMDb API timed out.")
+        logger.error(f"{LOG_PREFIX_FETCH} Request to TMDb API timed out.")
         raise ValueError("TMDb API call timed out.")
     except requests.RequestException as e:
-        logging.error(f"{LOG_PREFIX_FETCH} Failed to fetch data from TMDb: {str(e)}")
+        logger.error(f"{LOG_PREFIX_FETCH} Failed to fetch data from TMDb: {str(e)}")
         raise ValueError(f"TMDb API call failed: {str(e)}")
     
-def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
+def query_additional_apis(logger: logging.Logger, tmdb_id: str, title: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
     """Query additional APIs using the TMDb ID and filter results by search query if set."""
     # Initialize dictionaries and lists to track failed sites, successful sites, and missing media types
     failed_sites = {}
@@ -64,21 +64,25 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
     headers = {'Content-Type': 'application/json'}
 
     if search_query is not None:
-        console.print(f"\n[bold yellow]Searching trackers for {title} with search query \"{search_query}\"...[/bold yellow]")
-        logging.info(f"{LOG_PREFIX_SEARCH} Started searching trackers for {title} with search query: {search_query}")
+        console.print("")
+        console.rule(f"[bold yellow]Searching trackers for {title} with search query \"{search_query}\"...[/bold yellow]", align="center")
+        console.print("")
+        logger.info(f"{LOG_PREFIX_SEARCH} Started searching trackers for {title} with search query: {search_query}")
     else:
-        console.print(f"\n[bold yellow]Searching trackers for {title}...[/bold yellow]")
-        logging.info(f"{LOG_PREFIX_SEARCH} Started searching trackers for {title}")
+        console.print("")
+        console.rule(f"[bold yellow]Searching trackers for {title}...[/bold yellow]", align="center")
+        console.print("")
+        logger.info(f"{LOG_PREFIX_SEARCH} Started searching trackers for {title}")
 
-    time.sleep(2)  # Add a delay to prevent rate limiting
+    time.sleep(1)
 
-    def handle_response(tracker_name, response):
+    def handle_response(logger: logging.Logger, tracker_name, response):
         """Handle the API response, returning the data if valid, otherwise logging an error."""
         try:
             data = response.json()
         except json.JSONDecodeError:
             reason = f"Invalid JSON response: {response.text[:100]}..."
-            logging.error(f"{LOG_PREFIX_SEARCH} {tracker_name} API failed: {reason}")
+            logger.error(f"{LOG_PREFIX_SEARCH} {tracker_name} API failed: {reason}")
             failed_sites[tracker_name] = "Invalid JSON response"
             return None
         return data
@@ -103,22 +107,22 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
                     missing_media[tracker_name] = []
                 missing_media[tracker_name].append(media_type)
 
-    def export_json(data, tracker_code, tracker_name):
+    def export_json(logger: logging.Logger, data, tracker_code, tracker_name):
         """Export the data to a JSON file."""
         try:
             filename = Path(OUTPUT_DIR) / f"{tracker_code}_TMDb_{tmdb_id}.json"
             with open(filename, "w", encoding="utf-8") as json_file:
                 json.dump(data, json_file, ensure_ascii=False, indent=4)
-            logging.info(f"{LOG_PREFIX_SAVE} Exported {tracker_name} ({tracker_code}) response to {filename}")
+            logger.info(f"{LOG_PREFIX_SAVE} Exported {tracker_name} ({tracker_code}) response to {filename}")
         except FileNotFoundError as e:
-            logging.error(f"{LOG_PREFIX_JSON} File not found error: {e}")
+            logger.error(f"{LOG_PREFIX_JSON} File not found error: {e}")
         except IOError as e:
-            logging.error(f"{LOG_PREFIX_JSON} I/O error: {e}")
+            logger.error(f"{LOG_PREFIX_JSON} I/O error: {e}")
         except Exception as e:
-            logging.error(f"{LOG_PREFIX_JSON} An unexpected error occurred: {e}")
+            logger.error(f"{LOG_PREFIX_JSON} An unexpected error occurred: {e}")
 
     if output_json:
-        logging.info(f"{LOG_PREFIX_JSON} JSON arguments detected; JSON files will be saved accordingly.")
+        logger.info(f"{LOG_PREFIX_JSON} JSON arguments detected; JSON files will be saved accordingly.")
 
     for tracker in trackers:
         # Extract tracker details
@@ -129,7 +133,7 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
         if not api_key:
             # Log and continue if API key is missing
             reason = "Missing API key"
-            logging.warning(f"{LOG_PREFIX_API} Skipping {tracker_name}: {reason}")
+            logger.warning(f"{LOG_PREFIX_API} Skipping {tracker_name}: {reason}")
             failed_sites[tracker_name] = reason
             continue
 
@@ -137,12 +141,12 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
 
         try:
             # Log the query attempt with the API key redacted
-            logging.info(f"{LOG_PREFIX_SEARCH} Querying {tracker_name} for TMDb ID: {tmdb_id}" + (f" with search query: {search_query}" if search_query else ""))
+            logger.info(f"{LOG_PREFIX_SEARCH} Querying {tracker_name} for TMDb ID: {tmdb_id}" + (f" with search query: {search_query}" if search_query else ""))
             response = requests.get(url, headers=headers, params=params, timeout=10)
             response.raise_for_status()
-            data = handle_response(tracker_name, response)
+            data = handle_response(logger, tracker_name, response)
             if data is None:
-                logging.info(f"{LOG_PREFIX_PROCESS} {tracker_name} returned no data.")
+                logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} returned no data.")
                 continue
 
             collected_data.append((data, tracker_code, tracker_name))
@@ -153,7 +157,7 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
                     filtered_results = filter_results(data, search_query)
                     if not filtered_results:
                         reason = f"No results matching query '{search_query}'"
-                        logging.info(f"{LOG_PREFIX_PROCESS} {tracker_name} failed: {reason}")
+                        logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} failed: {reason}")
                         failed_sites[tracker_name] = reason
                         continue
                     data['data'] = filtered_results
@@ -162,18 +166,20 @@ def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] 
                 check_media_types(data, tracker_name)
 
                 # Display the API results in the console
-                display_api_results(data, tracker_name)
+                display_api_results(logger, data, tracker_name)
                 successful_sites.append(tracker_name)
-                logging.info(f"{LOG_PREFIX_PROCESS} {tracker_name} found data for TMDb ID {tmdb_id}.")
+                logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} found data for TMDb ID {tmdb_id}")
             else:
                 # Log and continue if no matching results are found
                 reason = "No matching results"
-                logging.info(f"{LOG_PREFIX_PROCESS} {tracker_name} failed: {reason}")
+                logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} failed: {reason}")
                 failed_sites[tracker_name] = reason
 
         except requests.RequestException as e:
             # Log the exception with the API key redacted
-            logging.error(f"{LOG_PREFIX_API} Request to {tracker_name} failed: {str(e)}")
+            logger.error(f"{LOG_PREFIX_API} Request to {tracker_name} failed: {str(e)}")
+
+        time.sleep(1)  # Add a delay to prevent rate limiting
 
     if output_json:
         for data, tracker_code, tracker_name in collected_data:

@@ -23,7 +23,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true", help="Overwrite the existing .env file if it exists.")
     return parser.parse_args()
 
-def display_movie_details(details: Dict[str, Any]) -> None:
+def display_movie_details(logger: logging.Logger, details: Dict[str, Any]) -> None:
     """Display movie/series details."""
     try:
         title = details.get('title', details.get('name', 'N/A'))
@@ -48,11 +48,11 @@ def display_movie_details(details: Dict[str, Any]) -> None:
 
         return title
     except KeyError as e:
-        logging.error(f"{LOG_PREFIX_OUTPUT} Key error displaying movie details: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Key error displaying movie details: {str(e)}")
     except Exception as e:
-        logging.error(f"{LOG_PREFIX_OUTPUT} Error displaying movie details: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Error displaying movie details: {str(e)}")
 
-def display_api_results(response_data, api_name, search_query=None):
+def display_api_results(logger: logging.Logger, response_data, api_name, search_query=None):
     """Display results from an API in a formatted table with optional search."""
     try:
         data = response_data.get("data", [])
@@ -89,7 +89,7 @@ def display_api_results(response_data, api_name, search_query=None):
         table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
     except Exception as e:
-        logging.error(f"{LOG_PREFIX_OUTPUT} Error displaying {api_name} results: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Error displaying {api_name} results: {str(e)}")
 
 def search_results(response_data, query):
     """Search for specific strings in the name of API results."""

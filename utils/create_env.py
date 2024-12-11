@@ -38,19 +38,19 @@ RFX_URL=https://reelflix.xyz/api/torrents/filter
 ULCX_URL=https://upload.cx/api/torrents/filter
 """
 
-def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> None:
+def create_env_file(logger: logging.Logger, file_path: str = "config/.env", overwrite: bool = False) -> None:
     """Create an .env file with preset values if it does not already exist or overwrite is enabled."""
     file_path = Path(file_path)
 
     if file_path.exists() and not overwrite:
         message = f"{file_path} already exists. Skipping creation."
-        logging.info(f"{LOG_PREFIX_CONFIG} {message}")
+        logger.info(f"{LOG_PREFIX_CONFIG} {message}")
         return
 
     if file_path.exists() and overwrite:
         message = f"{file_path} exists but will be overwritten."
         console.print(f"[bold yellow]{message}[/bold yellow]")
-        logging.info(f"{LOG_PREFIX_CONFIG} {message}")
+        logger.info(f"{LOG_PREFIX_CONFIG} {message}")
 
     try:
         # Use a context manager to ensure the file is properly closed
@@ -58,17 +58,17 @@ def create_env_file(file_path: str = "config/.env", overwrite: bool = False) -> 
             file.write(ENV_CONTENT)
         message = f"{file_path} has been created. Please edit the file with your configuration values and rerun the script."
         console.print(f"[bold green]{message}[/bold green]")
-        logging.info(f"{LOG_PREFIX_CONFIG} {message}")
+        logger.info(f"{LOG_PREFIX_CONFIG} {message}")
         sys.exit(0)  # Exit the script after creating the file
     except FileNotFoundError as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} FileNotFoundError: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} FileNotFoundError: {str(e)}")
         raise EnvFileCreationError(file_path, f"File not found: {str(e)}")
     except PermissionError as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} PermissionError: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} PermissionError: {str(e)}")
         raise EnvFileCreationError(file_path, f"Permission denied: {str(e)}")
     except IOError as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} IOError: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} IOError: {str(e)}")
         raise EnvFileCreationError(file_path, f"I/O error: {str(e)}")
     except Exception as e:
-        logging.error(f"{LOG_PREFIX_CONFIG} An unexpected error occurred: {str(e)}")
+        logger.error(f"{LOG_PREFIX_CONFIG} An unexpected error occurred: {str(e)}")
         raise EnvFileCreationError(file_path, f"An unexpected error occurred: {str(e)}")

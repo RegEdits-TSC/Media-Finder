@@ -18,7 +18,7 @@ LOG_PREFIX_CONFIG = "[CONFIG]"
 LOG_PREFIX_TASK = "[TASK]"
 LOG_PREFIX_RESULT = "[RESULT]"
 
-def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: list = None) -> None:
+def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: list = None) -> logging.Logger:
     """Setup logging configuration with sensitive information redaction."""
     class RedactingSensitiveInformation(logging.Formatter):
         """Formatter that redacts sensitive information in log messages."""
@@ -63,13 +63,13 @@ def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: l
     )
     file_handler.setFormatter(formatter)
 
-    # Add handlers to the logger
-    if not logger.handlers:
-        logger.addHandler(file_handler)
+    # Add file handler to the logger
+    logger.addHandler(file_handler)
 
     # Redacting formatter for urllib3 logs
     if sensitive_values:
         urllib3_logger = logging.getLogger("urllib3")
+        urllib3_logger.handlers.clear()
         urllib3_logger.addHandler(file_handler)
         urllib3_logger.setLevel(log_level)
         # Disable propagation to avoid duplicate logs
@@ -79,3 +79,5 @@ def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: l
     logger.info(f"{LOG_PREFIX_TASK} Logging initialized.")
     if debug_mode:
         logger.debug(f"{LOG_PREFIX_TASK} Debug mode enabled. All responses and execution steps will be logged.")
+
+    return logger
