@@ -69,9 +69,9 @@ def perform_search(args, tmdb_api_key, tmdb_url, trackers):
         raise MissingArgumentError("Please specify either --id or --name to search.")
 
     # Display the movie details
-    display_movie_details(details)
+    title = display_movie_details(details)
     # Query additional APIs using the TMDb ID
-    query_additional_apis(details['id'], search_query, trackers, args.json, OUTPUT_DIR)
+    query_additional_apis(details['id'], title, search_query, trackers, args.json, OUTPUT_DIR)
 
 def handle_errors(func):
     """Decorator to handle errors."""
