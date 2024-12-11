@@ -62,7 +62,7 @@ def validate_env_vars():
         if missing_required:
             error_message = f"Missing required environment variables: {', '.join(missing_required)}"
             logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
-            raise MissingEnvironmentVariableError(error_message)
+            raise MissingEnvironmentVariableError(missing_required)
 
         # Check for valid tracker API key and URL pairs
         valid_trackers = [
@@ -83,7 +83,6 @@ def validate_env_vars():
                 f"from: {', '.join([f'{name} ({code})' for _, _, name, code in TRACKER_SITES])}"
             )
             logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
-            console.print(f"[bold red]Error:[/bold red] {error_message}")
             raise NoValidTrackersError(error_message)
 
         # Log disabled trackers due to missing or empty values
