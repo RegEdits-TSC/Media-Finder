@@ -3,24 +3,28 @@ import sys
 from rich.console import Console
 from rich.table import Table
 from utils.exceptions import NoResultsError, InvalidChoiceError
+from utils.helpers import create_table
 
 console = Console()
 
 def display_results_table(results):
     """Display search results in a table."""
-    # Create a table with a title and column styles
-    table = Table(title="Search Results", title_style="bold green", border_style="bold white")
-    table.add_column("Index", style="bold green", no_wrap=True)
-    table.add_column("Title", style="bold yellow")
-    table.add_column("Release Year", style="bold yellow")
+    # Define the columns
+    columns = [
+        ("Index", "bold green", "center"),
+        ("Title", "bold yellow", "left"),
+        ("Release Year", "bold yellow", "center")
+    ]
 
-    # Populate the table with results
+    # Populate the rows with results
+    rows = []
     for index, result in enumerate(results, start=1):
         title = result.get('title', result.get('name', 'N/A'))  # Get the title or name of the result
         release_year = result.get('release_date', result.get('first_air_date', 'N/A'))[:4]  # Get the release year
-        table.add_row(str(index), title, release_year)  # Add a row to the table
+        rows.append([str(index), title, release_year])  # Add a row to the rows list
 
-    # Print the table to the console
+    # Create and display the table
+    table = create_table(title="Search Results", title_style="bold green", border_style="bold white", columns=columns, rows=rows)
     console.print(table)
 
 def get_user_choice(num_results):
