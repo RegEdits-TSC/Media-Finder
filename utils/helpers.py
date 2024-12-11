@@ -5,6 +5,8 @@ from rich.table import Table
 from rich.console import Console
 from typing import Any, Dict
 
+from utils.logger import LOG_PREFIX_OUTPUT
+
 console = Console()
 
 def parse_arguments() -> argparse.Namespace:
@@ -46,9 +48,9 @@ def display_movie_details(details: Dict[str, Any]) -> None:
 
         return title
     except KeyError as e:
-        logging.error(f"Key error displaying movie details: {str(e)}")
+        logging.error(f"{LOG_PREFIX_OUTPUT} Key error displaying movie details: {str(e)}")
     except Exception as e:
-        logging.error(f"Error displaying movie details: {str(e)}")
+        logging.error(f"{LOG_PREFIX_OUTPUT} Error displaying movie details: {str(e)}")
 
 def display_api_results(response_data, api_name, search_query=None):
     """Display results from an API in a formatted table with optional search."""
@@ -87,7 +89,7 @@ def display_api_results(response_data, api_name, search_query=None):
         table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
     except Exception as e:
-        logging.error(f"Error displaying {api_name} results: {str(e)}")
+        logging.error(f"{LOG_PREFIX_OUTPUT} Error displaying {api_name} results: {str(e)}")
 
 def search_results(response_data, query):
     """Search for specific strings in the name of API results."""

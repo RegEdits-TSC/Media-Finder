@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from utils.validation import setup_environment, API_KEYS
 from utils.helpers import display_movie_details, parse_arguments
-from utils.logger import setup_logging
+from utils.logger import LOG_PREFIX_API, LOG_PREFIX_INPUT, LOG_PREFIX_TASK, setup_logging
 from cmds.processing import select_tmdb_result
 from cmds.api_commands import search_tmdb, query_additional_apis
 from rich.console import Console
@@ -36,7 +36,7 @@ def setup(args):
         tracker_code = tracker["code"]
         
         # Log the tracker information
-        logging.info(f"{tracker_name} ({tracker_code}) | Using provided API key with URL: {url}")
+        logging.info(f"{LOG_PREFIX_API} {tracker_name} ({tracker_code}) | Using provided API key with URL: {url}")
 
     return tmdb_api_key, tmdb_url, trackers
 
@@ -79,16 +79,16 @@ def handle_errors(func):
         try:
             return func(*args, **kwargs)
         except MissingArgumentError as e:
-            logging.error(str(e))
+            logging.error(f"{LOG_PREFIX_INPUT} {str(e)}")
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
         except InvalidTMDbIDError as e:
-            logging.error(str(e))
+            logging.error(f"{LOG_PREFIX_INPUT} {str(e)}")
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
         except NoSuitableResultError as e:
-            logging.error(str(e))
+            logging.error(f"{LOG_PREFIX_INPUT} {str(e)}")
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
         except ValueError as e:
-            logging.error(str(e))
+            logging.error(f"{LOG_PREFIX_INPUT} {str(e)}")
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
     return wrapper
 
@@ -103,6 +103,8 @@ def main() -> None:
 
     # Perform the search based on the provided arguments
     perform_search(args, tmdb_api_key, tmdb_url, trackers)
+
+    logging.info(f"{LOG_PREFIX_TASK} Script execution completed.")
 
 if __name__ == "__main__":
     main()

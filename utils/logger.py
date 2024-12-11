@@ -4,6 +4,20 @@ import re
 from pathlib import Path
 from datetime import datetime
 
+# Log Prefix Constants
+LOG_PREFIX_VALIDATE = "[VALIDATE]"
+LOG_PREFIX_JSON = "[JSON]"
+LOG_PREFIX_SEARCH = "[SEARCH]"
+LOG_PREFIX_API = "[API]"
+LOG_PREFIX_FETCH = "[FETCH]"
+LOG_PREFIX_SAVE = "[SAVE]"
+LOG_PREFIX_INPUT = "[INPUT]"
+LOG_PREFIX_PROCESS = "[PROCESS]"
+LOG_PREFIX_OUTPUT = "[OUTPUT]"
+LOG_PREFIX_CONFIG = "[CONFIG]"
+LOG_PREFIX_TASK = "[TASK]"
+LOG_PREFIX_RESULT = "[RESULT]"
+
 def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: list = None) -> None:
     """Setup logging configuration with sensitive information redaction."""
     class RedactingSensitiveInformation(logging.Formatter):
@@ -62,6 +76,6 @@ def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: l
         urllib3_logger.propagate = False
 
     # Log initialization messages
-    logger.info("Logging initialized.")
+    logger.info(f"{LOG_PREFIX_TASK} Logging initialized.")
     if debug_mode:
-        logger.debug("Debug mode enabled. All responses and execution steps will be logged.")
+        logger.debug(f"{LOG_PREFIX_TASK} Debug mode enabled. All responses and execution steps will be logged.")

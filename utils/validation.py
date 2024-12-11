@@ -6,6 +6,8 @@ from utils.create_env import create_env_file
 from utils.exceptions import MissingEnvironmentVariableError, NoValidTrackersError
 from rich.console import Console
 
+from utils.logger import LOG_PREFIX_CONFIG, LOG_PREFIX_VALIDATE
+
 console = Console()
 
 # Load environment variables from the .env file located in the config directory
@@ -56,7 +58,7 @@ def validate_env_vars():
         missing_required = [key for key in required_keys if not os.getenv(key)]
         if missing_required:
             error_message = f"Missing required environment variables: {', '.join(missing_required)}"
-            logging.error(error_message)
+            logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
             raise MissingEnvironmentVariableError(error_message)
 
         # Check for valid tracker API key and URL pairs
@@ -77,7 +79,7 @@ def validate_env_vars():
                 "At least one valid tracker API key and URL pair is required "
                 f"from: {', '.join([f'{name} ({code})' for _, _, name, code in TRACKER_SITES])}"
             )
-            logging.error(error_message)
+            logging.error(f"{LOG_PREFIX_VALIDATE} {error_message}")
             console.print(f"[bold red]Error:[/bold red] {error_message}")
             raise NoValidTrackersError(error_message)
 
@@ -89,11 +91,11 @@ def validate_env_vars():
         ]
         if disabled_trackers:
             logging.warning(
-                "The following trackers are disabled due to missing or empty values: "
+                f"{LOG_PREFIX_VALIDATE} The following trackers are disabled due to missing or empty values: "
                 + ", ".join([f"{tracker['name']} ({tracker['code']})" for tracker in disabled_trackers])
             )
 
-        logging.info("Environment variables validated successfully.")
+        logging.info(f"{LOG_PREFIX_VALIDATE} Environment variables validated successfully.")
 
         # Return validated environment variables and trackers
         return {
@@ -102,17 +104,17 @@ def validate_env_vars():
         }
 
     except MissingEnvironmentVariableError as e:
-        logging.error(f"MissingEnvironmentVariableError: {str(e)}")
+        logging.error(f"{LOG_PREFIX_CONFIG} MissingEnvironmentVariableError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except NoValidTrackersError as e:
-        logging.error(f"NoValidTrackersError: {str(e)}")
+        logging.error(f"{LOG_PREFIX_CONFIG} NoValidTrackersError: {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except Exception as e:
-        logging.error(f"An unexpected error occurred: {str(e)}")
+        logging.error(f"{LOG_PREFIX_CONFIG} An unexpected error occurred: {str(e)}")
         console.print(f"[bold red]An unexpected error occurred:[/bold red] {str(e)}")
         raise
 

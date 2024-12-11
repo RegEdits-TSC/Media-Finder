@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from utils.exceptions import NoResultsError, InvalidChoiceError
 from utils.helpers import create_table
+from utils.logger import LOG_PREFIX_INPUT, LOG_PREFIX_PROCESS
 
 console = Console()
 
@@ -33,10 +34,10 @@ def get_user_choice(num_results):
         # Prompt the user to enter their choice
         choice = console.input("\nEnter the index of the correct result, or type 'none' if none are correct: ").strip().lower()
         if choice == 'none':
-            logging.info("User chose 'none', no result selected.")
+            logging.info(f"{LOG_PREFIX_INPUT} User chose 'none', no result selected.")
             return None  # Return None if the user chooses 'none'
         elif choice.isdigit() and 1 <= int(choice) <= num_results:
-            logging.info(f"User selected result at index: {choice}")
+            logging.info(f"{LOG_PREFIX_INPUT} User selected result at index: {choice}")
             return int(choice) - 1  # Return the index of the selected result
         else:
             console.print("[bold red]Invalid choice. Please try again.[/bold red]")  # Prompt the user to try again if the input is invalid
@@ -47,12 +48,12 @@ def select_tmdb_result(results):
         if not results:
             raise NoResultsError("No results to process.")
 
-        logging.info(f"Processing {len(results)} search results.")
+        logging.info(f"{LOG_PREFIX_PROCESS} Processing {len(results)} search results.")
         if len(results) == 1:
             # Automatically select the result if there is only one
             selected = results[0]
             console.print(f"[bold yellow]Automatically selected:[/bold yellow] {selected.get('title', 'N/A')}")
-            logging.info(f"Automatically selected result: {selected}")
+            logging.info(f"{LOG_PREFIX_PROCESS} Automatically selected result: {selected}")
             return selected
 
         # Display results in a table for user selection
@@ -69,16 +70,16 @@ def select_tmdb_result(results):
         return results[choice_index]  # Return the selected result
 
     except NoResultsError as e:
-        logging.error(str(e))
+        logging.error(f"{LOG_PREFIX_PROCESS} {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except InvalidChoiceError as e:
-        logging.error(str(e))
+        logging.error(f"{LOG_PREFIX_INPUT} {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
 
     except Exception as e:
-        logging.error(str(e))
+        logging.error(f"{LOG_PREFIX_PROCESS} {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
