@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from utils.validation import setup_environment, API_KEYS
 from utils.helpers import display_movie_details, parse_arguments
@@ -106,6 +105,7 @@ if __name__ == "__main__":
     # Parse command-line arguments
     args = parse_arguments()
 
+    # Setup logging and execute the main function
     logger = setup_logging(OUTPUT_DIR, debug_mode=args.debug, sensitive_values=list(API_KEYS.values()))
     main = handle_errors(logger)(main)
     main()

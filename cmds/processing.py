@@ -1,7 +1,6 @@
 import logging
 import sys
 from rich.console import Console
-from rich.table import Table
 from utils.exceptions import NoResultsError, InvalidChoiceError
 from utils.helpers import create_table
 from utils.logger import LOG_PREFIX_INPUT, LOG_PREFIX_PROCESS

@@ -1,6 +1,5 @@
 import argparse
 import logging
-import time
 from rich.table import Table
 from rich.console import Console
 from typing import Any, Dict
