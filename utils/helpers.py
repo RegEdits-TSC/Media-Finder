@@ -44,10 +44,7 @@ def display_movie_details(details: Dict[str, Any]) -> None:
         table = create_table("Movie/Series Details", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
 
-        console.print(f"\n[bold yellow]Searching trackers for {title}...[/bold yellow]")
-        logging.info(f"Started searching trackers for {title}.")
-
-        time.sleep(2)
+        return title
     except KeyError as e:
         logging.error(f"Key error displaying movie details: {str(e)}")
     except Exception as e:
@@ -86,7 +83,7 @@ def display_api_results(response_data, api_name, search_query=None):
             ("Leechers", "bold yellow", "center"),
             ("Freeleech", "bold yellow", "center")
         ]
-        
+
         table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
         console.print(table)
     except Exception as e:
