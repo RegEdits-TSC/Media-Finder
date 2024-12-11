@@ -4,7 +4,6 @@ from pathlib import Path
 import requests
 from urllib.parse import urljoin
 from utils.helpers import create_table, display_api_results
-from rich.table import Table
 from rich.console import Console
 from typing import Optional, Dict, Any, List
 from utils.exceptions import NoResultsFoundError
