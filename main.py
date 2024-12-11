@@ -105,6 +105,7 @@ def main() -> None:
     perform_search(args, tmdb_api_key, tmdb_url, trackers)
 
     logging.info(f"{LOG_PREFIX_TASK} Script execution completed.")
+    console.rule("[bold green]Script execution completed.[/bold green]", align="center")
 
 if __name__ == "__main__":
     main()

@@ -18,36 +18,39 @@ API_KEYS = {
     "TMDB_API_KEY": os.getenv("TMDB_API_KEY"),
     "ATH_API_KEY": os.getenv('ATH_API_KEY'),
     "BLU_API_KEY": os.getenv('BLU_API_KEY'),
-    "ULCX_API_KEY": os.getenv('ULCX_API_KEY'),
-    "LST_API_KEY": os.getenv('LST_API_KEY'),
     "FNP_API_KEY": os.getenv('FNP_API_KEY'),
+    "HDB_API_KEY": os.getenv('HDB_API_KEY'),
+    "LST_API_KEY": os.getenv('LST_API_KEY'),
     "OTW_API_KEY": os.getenv('OTW_API_KEY'),
+    "PSS_API_KEY": os.getenv('PSS_API_KEY'),
     "RFX_API_KEY": os.getenv('RFX_API_KEY'),
-    "PSS_API_KEY": os.getenv('PSS_API_KEY')
+    "ULCX_API_KEY": os.getenv('ULCX_API_KEY')
 }
 
 URLS = {
     "TMDB_URL": os.getenv('TMDB_URL'),
-    "BLU_URL": os.getenv('BLU_URL'),
     "ATH_URL": os.getenv('ATH_URL'),
-    "ULCX_URL": os.getenv('ULCX_URL'),
-    "LST_URL": os.getenv('LST_URL'),
+    "BLU_URL": os.getenv('BLU_URL'),
     "FNP_URL": os.getenv('FNP_URL'),
+    "HDB_URL": os.getenv('HDB_URL'),
+    "LST_URL": os.getenv('LST_URL'),
     "OTW_URL": os.getenv('OTW_URL'),
+    "PSS_URL": os.getenv('PSS_URL'),
     "RFX_URL": os.getenv('RFX_URL'),
-    "PSS_URL": os.getenv('PSS_URL')
+    "ULCX_URL": os.getenv('ULCX_URL')
 }
 
 # List of tracker sites with their corresponding API key and URL environment variable names, names, and codes
 TRACKER_SITES = [
     ("ATH_API_KEY", "ATH_URL", "Aither", "ATH"),
     ("BLU_API_KEY", "BLU_URL", "Blutopia", "BLU"),
-    ("ULCX_API_KEY", "ULCX_URL", "Upload.cx", "ULCX"),
-    ("LST_API_KEY", "LST_URL", "L0ST", "LST"),
     ("FNP_API_KEY", "FNP_URL", "FearNoPeer", "FNP"),
+    ("HDB_API_KEY", "HDB_URL", "HDBits", "HDB"),
+    ("LST_API_KEY", "LST_URL", "L0ST", "LST"),
     ("OTW_API_KEY", "OTW_URL", "OldToons.World", "OTW"),
+    ("PSS_API_KEY", "PSS_URL", "PrivateSilverScreen", "PSS"),
     ("RFX_API_KEY", "RFX_URL", "ReelFliX", "RFX"),
-    ("PSS_API_KEY", "PSS_URL", "PrivateSilverScreen", "PSS")
+    ("ULCX_API_KEY", "ULCX_URL", "Upload.cx", "ULCX")
 ]
 
 def validate_env_vars():
