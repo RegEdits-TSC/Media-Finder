@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+import time
 import requests
 from urllib.parse import urljoin
 from utils.helpers import create_table, display_api_results
@@ -51,7 +52,7 @@ def fetch_details(endpoint: str, params: Dict[str, str], tmdb_url: Optional[str]
         logging.error(f"Failed to fetch data from TMDb: {str(e)}")
         raise ValueError(f"TMDb API call failed: {str(e)}")
     
-def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
+def query_additional_apis(tmdb_id: str, title: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
     """Query additional APIs using the TMDb ID and filter results by search query if set."""
     # Initialize dictionaries and lists to track failed sites, successful sites, and missing media types
     failed_sites = {}
@@ -59,6 +60,15 @@ def query_additional_apis(tmdb_id: str, search_query: Optional[str] = None, trac
     missing_media = {}
     params = {'tmdbId': tmdb_id}
     headers = {'Content-Type': 'application/json'}
+
+    if search_query is not None:
+        console.print(f"\n[bold yellow]Searching trackers for {title} with search query \"{search_query}\"...[/bold yellow]")
+        logging.info(f"Started searching trackers for {title} with search query: {search_query}")
+    else:
+        console.print(f"\n[bold yellow]Searching trackers for {title}...[/bold yellow]")
+        logging.info(f"Started searching trackers for {title}")
+
+    time.sleep(2)  # Add a delay to prevent rate limiting
 
     def handle_response(tracker_name, response):
         """Handle the API response, returning the data if valid, otherwise logging an error."""
