@@ -73,8 +73,9 @@ def select_tmdb_result(logger: logging.Logger, results):
         # Get user choice
         choice_index = get_user_choice(logger, len(results))
         if choice_index is None:
-            console.print("[bold yellow]If you're confident that the media exists on TMDb, please verify the spelling of the title.[/bold yellow]")
-            console.print("[bold yellow]TMDb's search functionality considers original, translated, and alternative titles, but accurate spelling ensures optimal search results.[/bold yellow]")
+            console.print("[bold yellow]If you're confident the media exists on TMDb, please double-check the title's spelling for accuracy.[/bold yellow]")
+            console.print("[bold yellow]TMDb searches across original, translated, and alternative titles, but precise spelling helps achieve the best results.[/bold yellow]")
+            console.print("[bold yellow]Alternatively, you can use the `--id` option if you know the entry exists on TMDb.[/bold yellow]")
             sys.exit(0)  # Cleanly exit the script if choice is None
         if choice_index < 0 or choice_index >= len(results):
             raise InvalidChoiceError("Invalid choice made by the user.")
