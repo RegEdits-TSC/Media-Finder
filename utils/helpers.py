@@ -1,10 +1,11 @@
 import argparse
+import json
 import logging
+from pathlib import Path
 from rich.table import Table
 from rich.console import Console
-from typing import Any, Dict
-
-from utils.logger import LOG_PREFIX_OUTPUT
+from typing import Any, Dict, List, Optional, Tuple
+from utils.logger import LOG_PREFIX_JSON, LOG_PREFIX_OUTPUT, LOG_PREFIX_PROCESS, LOG_PREFIX_SAVE
 
 console = Console()
 
@@ -41,28 +42,36 @@ def display_movie_details(logger: logging.Logger, details: Dict[str, Any]) -> No
         ]
 
         # Create and print the table
+        table_name = "Movie/Series Details"
         columns = [("Field", "bold green", "left"), ("Details", "bold yellow", "left")]
-        table = create_table("Movie/Series Details", columns, rows, title_style="bold green", border_style="bold white")
+        table = create_table(logger, table_name, columns, rows, title_style="bold green", border_style="bold white")
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying {table_name} table.")
         console.print(table)
 
         return title
     except KeyError as e:
-        logger.error(f"{LOG_PREFIX_OUTPUT} Key error displaying movie details: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Key error displaying {table_name} table: {str(e)}")
     except Exception as e:
-        logger.error(f"{LOG_PREFIX_OUTPUT} Error displaying movie details: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Error displaying {table_name} table: {str(e)}")
 
-def display_api_results(logger: logging.Logger, response_data, api_name, search_query=None):
+def display_api_results(logger: logging.Logger, response_data: Dict[str, Any], api_name: str, search_query: Optional[str] = None) -> None:
     """Display results from an API in a formatted table with optional search."""
     try:
         data = response_data.get("data", [])
-        
+        filtered_by_search = False
+
         # Filter results if a search query is provided
         if search_query:
+            logger.info(f"{LOG_PREFIX_PROCESS} Filtering {api_name} results for: {search_query}")
             data = search_results(response_data, search_query)
+            filtered_by_search = True
 
         # Skip displaying if no results are found
         if not data:
-            console.print(f"[bold red]{api_name} API Results: No matching results found.[/bold red]")
+            if filtered_by_search:
+                logger.info(f"{LOG_PREFIX_OUTPUT} {api_name} API Results: No matching results found for the query: {search_query}")
+            else:
+                logger.info(f"{LOG_PREFIX_OUTPUT} {api_name} API Results: No data found.")
             return
 
         # Prepare rows for the table
@@ -85,12 +94,20 @@ def display_api_results(logger: logging.Logger, response_data, api_name, search_
             ("Freeleech", "bold yellow", "center")
         ]
 
-        table = create_table(f"{api_name} Results", columns, rows, title_style="bold green", border_style="bold white")
+        table_name = f"{api_name} Results"
+        table = create_table(logger, table_name, columns, rows, title_style="bold green", border_style="bold white")
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying {table_name} table.")
         console.print(table)
+    except KeyError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} KeyError in {table_name} table: {str(e)}")
+    except TypeError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} TypeError in {table_name} table: {str(e)}")
+    except ValueError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} ValueError in {table_name} table: {str(e)}")
     except Exception as e:
-        logger.error(f"{LOG_PREFIX_OUTPUT} Error displaying {api_name} results: {str(e)}")
+        logger.error(f"{LOG_PREFIX_OUTPUT} Unexpected error displaying {table_name} table: {str(e)}")
 
-def search_results(response_data, query):
+def search_results(response_data: Dict[str, Any], query: str) -> List[Any]:
     """Search for specific strings in the name of API results."""
     results = response_data.get("data", [])
     filtered_results = []
@@ -102,17 +119,40 @@ def search_results(response_data, query):
 
     return filtered_results
 
-def bytes_to_gib(size_in_bytes):
+def bytes_to_gib(size_in_bytes: int) -> float:
     """Convert a size in bytes to a human-readable string in GiB."""
     if not size_in_bytes or size_in_bytes <= 0:
         return "0.00 GiB"
     return f"{size_in_bytes / (1024 ** 3):.2f} GiB"
 
-def create_table(title, columns, rows, title_style="bold red", border_style="bold white"):
+def create_table(logger: logging.Logger, title: str, columns: List[Tuple[str, str, str]], rows: List[List[str]], title_style: str = "bold red", border_style: str = "bold white") -> Table:
     """Create a table with the given title, columns, and rows."""
-    table = Table(title=title, title_style=title_style, border_style=border_style)
-    for column, style, justify in columns:
-        table.add_column(column, style=style, justify=justify)
-    for row in rows:
-        table.add_row(*row)
-    return table
+    # Spacer for better readability
+    console.print("")
+    try:
+        table = Table(title=title, title_style=title_style, border_style=border_style, expand=True)
+        for column, style, justify in columns:
+            table.add_column(column, style=style, justify=justify)
+        for row in rows:
+            table.add_row(*row)
+        
+        logger.info(f"{LOG_PREFIX_OUTPUT} Created table: {title}")
+        
+        return table
+    except Exception as e:
+        logger.error(f"Failed to create {title} table: {e}")
+        raise
+
+def export_json(logger: logging.Logger, OUTPUT_DIR: str, data: Dict[str, Any], tracker_code: str, tracker_name: str, tmdb_id: str) -> None:
+    """Export the data to a JSON file."""
+    try:
+        filename = Path(OUTPUT_DIR) / f"{tracker_code}_TMDb_{tmdb_id}.json"
+        with open(filename, "w", encoding="utf-8") as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+        logger.info(f"{LOG_PREFIX_SAVE} Exported {tracker_name} ({tracker_code}) data to {filename}")
+    except FileNotFoundError as e:
+        logger.error(f"File not found error: {e}")
+    except IOError as e:
+        logger.error(f"I/O error: {e}")
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {e}")
