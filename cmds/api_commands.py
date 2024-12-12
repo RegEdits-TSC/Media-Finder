@@ -5,7 +5,7 @@ import time
 import requests
 from urllib.parse import urljoin
 from cmds.processing import check_media_types, filter_results
-from utils.helpers import create_table, display_api_results, export_json
+from utils.helpers import create_table, display_api_results, display_failed_sites, display_missing_media_types, export_json
 from rich.console import Console
 from typing import Optional, Dict, Any, List
 from utils.exceptions import NoResultsFoundError
@@ -161,20 +161,12 @@ def query_tracker_api(logger: logging.Logger, tmdb_id: str, title: str, search_q
             export_json(logger, OUTPUT_DIR, data, tracker_code, tracker_name, tmdb_id)
 
     if failed_sites:
-        # Create a table to display failed sites and their reasons
-        failed_columns = [("Site", "bold yellow", "left"), ("Reason", "bold red", "left")]
-        failed_rows = [(site, reason) for site, reason in failed_sites.items()]
-        failed_table = create_table(logger, "Failed Sites", failed_columns, failed_rows)
-        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying failed sites.")
-        console.print(failed_table)
-
+        display_failed_sites(logger, failed_sites)
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying failed sites")
+    
     if missing_media:
-        # Create a table to display sites with missing media types
-        missing_columns = [("Site", "bold yellow", "left"), ("Missing Media Types", "bold red", "left")]
-        missing_rows = [(site, ", ".join(media_types)) for site, media_types in missing_media.items()]
-        missing_table = create_table(logger, "Missing Media Types", missing_columns, missing_rows)
+        display_missing_media_types(logger, missing_media)
         logger.info(f"{LOG_PREFIX_OUTPUT} Displaying sites with missing media types")
-        console.print(missing_table)
 
     if not successful_sites:
         logger.error(f"{LOG_PREFIX_OUTPUT} No successful queries.")
