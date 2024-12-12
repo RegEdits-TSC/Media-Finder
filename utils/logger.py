@@ -2,7 +2,7 @@ import logging
 import re
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 # Log Prefix Constants
 LOG_PREFIX_VALIDATE = "[VALIDATE]"
@@ -45,7 +45,7 @@ class CountingHandler(logging.Handler):
         elif record.levelno == logging.WARNING:
             self.warning_count += 1
 
-def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> (logging.Logger, CountingHandler):
+def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
     """Setup logging configuration with sensitive information redaction."""
     # Ensure the output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)
