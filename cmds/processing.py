@@ -1,31 +1,43 @@
 import logging
 import sys
+from typing import Any, Dict, List
 from rich.console import Console
 from utils.exceptions import NoResultsError, InvalidChoiceError
 from utils.helpers import create_table
-from utils.logger import LOG_PREFIX_INPUT, LOG_PREFIX_PROCESS
+from utils.logger import LOG_PREFIX_INPUT, LOG_PREFIX_OUTPUT, LOG_PREFIX_PROCESS, LOG_PREFIX_SEARCH
 
 console = Console()
 
-def display_results_table(results):
+def display_results_table(logger: logging.Logger, results: List[Dict[str, str]]) -> None:
     """Display search results in a table."""
-    # Define the columns
-    columns = [
-        ("Index", "bold green", "center"),
-        ("Title", "bold yellow", "left"),
-        ("Release Year", "bold yellow", "center")
-    ]
+    try:
+        # Define the columns
+        columns = [
+            ("Index", "bold green", "center"),
+            ("Title", "bold yellow", "left"),
+            ("Release Year", "bold yellow", "center")
+        ]
 
-    # Populate the rows with results
-    rows = []
-    for index, result in enumerate(results, start=1):
-        title = result.get('title', result.get('name', 'N/A'))  # Get the title or name of the result
-        release_year = result.get('release_date', result.get('first_air_date', 'N/A'))[:4]  # Get the release year
-        rows.append([str(index), title, release_year])  # Add a row to the rows list
+        # Populate the rows with results
+        rows = []
+        for index, result in enumerate(results, start=1):
+            title = result.get('title', result.get('name', 'N/A'))  # Get the title or name of the result
+            release_year = result.get('release_date', result.get('first_air_date', 'N/A'))[:4]  # Get the release year
+            rows.append([str(index), title, release_year])  # Add a row to the rows list
 
-    # Create and display the table
-    table = create_table(title="Search Results", title_style="bold green", border_style="bold white", columns=columns, rows=rows)
-    console.print(table)
+        # Create and display the table
+        table_name = "Search Results"
+        table = create_table(logger, title="Search Results", title_style="bold green", border_style="bold white", columns=columns, rows=rows)
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying {table_name} table.")
+        console.print(table)
+    except KeyError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} KeyError in {table_name} table: {str(e)}")
+    except TypeError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} TypeError in {table_name} table: {str(e)}")
+    except ValueError as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} ValueError in {table_name} table: {str(e)}")
+    except Exception as e:
+        logger.error(f"{LOG_PREFIX_OUTPUT} Unexpected error displaying {table_name} table: {str(e)}")
 
 def get_user_choice(logger: logging.Logger, num_results):
     """Get user choice for selecting a result."""
@@ -56,7 +68,7 @@ def select_tmdb_result(logger: logging.Logger, results):
             return selected
 
         # Display results in a table for user selection
-        display_results_table(results)
+        display_results_table(logger, results)
 
         # Get user choice
         choice_index = get_user_choice(logger, len(results))
@@ -82,3 +94,45 @@ def select_tmdb_result(logger: logging.Logger, results):
         logger.error(f"{LOG_PREFIX_PROCESS} {str(e)}")
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         raise
+
+def check_media_types(logger: logging.Logger, data: Dict[str, Any], tracker_name: str, missing_media) -> Dict[str, List[str]]:
+    """Check for missing media types in the results."""
+    # Define media types
+    MEDIA_TYPES = {"REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"}
+
+    try:
+        # Check for missing media types
+        logger.info(f"{LOG_PREFIX_PROCESS} Checking missing media types for {tracker_name}...")
+
+        site_media_types = [item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']]
+        for media_type in MEDIA_TYPES:
+            if not any(
+                media_type.lower() in item['attributes']['name'].lower() or
+                media_type.lower() == t.lower()
+                for item in data['data'] for t in site_media_types
+            ):
+                if tracker_name not in missing_media:
+                    missing_media[tracker_name] = []
+                missing_media[tracker_name].append(media_type)
+                logger.info(f"{LOG_PREFIX_PROCESS} Media type '{media_type}' not found on {tracker_name}")
+        return missing_media
+    except KeyError as e:
+        logger.error(f"{LOG_PREFIX_PROCESS} KeyError: {e}")
+    except Exception as e:
+        logger.error(f"{LOG_PREFIX_PROCESS} An unexpected error occurred: {e}")
+    
+
+def filter_results(logger: logging.Logger, data: Dict[str, Any], search_query: str) -> List[Dict[str, Any]]:
+    """Filter the results based on the search query."""
+    try:
+        terms = search_query.lower().split("^")
+        return [
+            item for item in data.get('data', [])
+            if all(term in item['attributes'].get('name', '').lower() for term in terms)
+        ]
+    except KeyError as e:
+        logger.error(f"{LOG_PREFIX_SEARCH} KeyError: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"{LOG_PREFIX_SEARCH} An unexpected error occurred: {e}")
+        return []
