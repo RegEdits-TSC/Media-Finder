@@ -4,16 +4,14 @@ from pathlib import Path
 import time
 import requests
 from urllib.parse import urljoin
-from utils.helpers import create_table, display_api_results
+from cmds.processing import check_media_types, filter_results
+from utils.helpers import create_table, display_api_results, export_json
 from rich.console import Console
 from typing import Optional, Dict, Any, List
 from utils.exceptions import NoResultsFoundError
-from utils.logger import LOG_PREFIX_API, LOG_PREFIX_FETCH, LOG_PREFIX_JSON, LOG_PREFIX_PROCESS, LOG_PREFIX_RESULT, LOG_PREFIX_SAVE, LOG_PREFIX_SEARCH
+from utils.logger import LOG_PREFIX_API, LOG_PREFIX_FETCH, LOG_PREFIX_JSON, LOG_PREFIX_OUTPUT, LOG_PREFIX_PROCESS, LOG_PREFIX_RESULT, LOG_PREFIX_SEARCH
 
 console = Console()
-
-# Define media types
-MEDIA_TYPES = ["REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"]
 
 def search_tmdb(logger: logging.Logger, search_type: str, tmdb_api_key: Optional[str] = None, tmdb_url: Optional[str] = None, tmdb_id: Optional[str] = None, name: Optional[List[str]] = None) -> Any:
     """Fetch details by ID or name for movies/series."""
@@ -33,27 +31,28 @@ def search_tmdb(logger: logging.Logger, search_type: str, tmdb_api_key: Optional
             return results
     except (NoResultsFoundError) as e:
         console.print(f"[bold red]Error:[/bold red] No results found for {' '.join(name)}")
-        logger.error(f"{LOG_PREFIX_FETCH} TMDb Error: {str(e)}")
+        logger.error(f"{LOG_PREFIX_FETCH} TMDb: No results found for {' '.join(name)}")
         raise
 
 def fetch_details(logger: logging.Logger, endpoint: str, params: Dict[str, str], tmdb_url: Optional[str] = None) -> Dict[str, Any]:
     """Fetch details from TMDb API."""
+    logger.info(f"{LOG_PREFIX_PROCESS} Joining TMDb URL with endpoint: {endpoint}")
     url = urljoin(tmdb_url, endpoint)
 
     try:
-        logger.info(f"{LOG_PREFIX_FETCH} Fetching data from endpoint: {url}")
+        logger.info(f"{LOG_PREFIX_FETCH} Fetching data from: {url}")
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         logger.debug(f"{LOG_PREFIX_RESULT} Response data: {response.json()}")
         return response.json()
     except requests.Timeout:
-        logger.error(f"{LOG_PREFIX_FETCH} Request to TMDb API timed out.")
+        logger.error(f"{LOG_PREFIX_API} Request to TMDb API timed out.")
         raise ValueError("TMDb API call timed out.")
     except requests.RequestException as e:
-        logger.error(f"{LOG_PREFIX_FETCH} Failed to fetch data from TMDb: {str(e)}")
+        logger.error(f"{LOG_PREFIX_API} Failed to fetch data from TMDb: {str(e)}")
         raise ValueError(f"TMDb API call failed: {str(e)}")
     
-def query_additional_apis(logger: logging.Logger, tmdb_id: str, title: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
+def query_tracker_api(logger: logging.Logger, tmdb_id: str, title: str, search_query: Optional[str] = None, trackers: Optional[List[dict]] = None, output_json: Optional[bool] = None, OUTPUT_DIR: Optional[Path] = None) -> None:
     """Query additional APIs using the TMDb ID and filter results by search query if set."""
     # Initialize dictionaries and lists to track failed sites, successful sites, and missing media types
     failed_sites = {}
@@ -82,44 +81,10 @@ def query_additional_apis(logger: logging.Logger, tmdb_id: str, title: str, sear
             data = response.json()
         except json.JSONDecodeError:
             reason = f"Invalid JSON response: {response.text[:100]}..."
-            logger.error(f"{LOG_PREFIX_SEARCH} {tracker_name} API failed: {reason}")
+            logger.error(f"{LOG_PREFIX_API} {tracker_name} API failed: {reason}")
             failed_sites[tracker_name] = "Invalid JSON response"
             return None
         return data
-
-    def filter_results(data, search_query):
-        """Filter the results based on the search query."""
-        return [
-            item for item in data['data']
-            if all(term.lower() in item['attributes']['name'].lower() for term in search_query.split("^"))
-        ]
-
-    def check_media_types(data, tracker_name):
-        """Check for missing media types in the results."""
-        site_media_types = [item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']]
-        for media_type in MEDIA_TYPES:
-            if not any(
-                media_type.lower() in item['attributes']['name'].lower() or
-                media_type.lower() == t.lower()
-                for item in data['data'] for t in site_media_types
-            ):
-                if tracker_name not in missing_media:
-                    missing_media[tracker_name] = []
-                missing_media[tracker_name].append(media_type)
-
-    def export_json(logger: logging.Logger, data, tracker_code, tracker_name):
-        """Export the data to a JSON file."""
-        try:
-            filename = Path(OUTPUT_DIR) / f"{tracker_code}_TMDb_{tmdb_id}.json"
-            with open(filename, "w", encoding="utf-8") as json_file:
-                json.dump(data, json_file, ensure_ascii=False, indent=4)
-            logger.info(f"{LOG_PREFIX_SAVE} Exported {tracker_name} ({tracker_code}) response to {filename}")
-        except FileNotFoundError as e:
-            logger.error(f"{LOG_PREFIX_JSON} File not found error: {e}")
-        except IOError as e:
-            logger.error(f"{LOG_PREFIX_JSON} I/O error: {e}")
-        except Exception as e:
-            logger.error(f"{LOG_PREFIX_JSON} An unexpected error occurred: {e}")
 
     if output_json:
         logger.info(f"{LOG_PREFIX_JSON} JSON arguments detected; JSON files will be saved accordingly.")
@@ -152,23 +117,31 @@ def query_additional_apis(logger: logging.Logger, tmdb_id: str, title: str, sear
             collected_data.append((data, tracker_code, tracker_name))
 
             if data and 'data' in data and data['data']:
+                filtered_by_search = False
+
                 if search_query:
                     # Filter results if search query is provided
-                    filtered_results = filter_results(data, search_query)
+                    filtered_results = filter_results(logger, data, search_query)
                     if not filtered_results:
-                        reason = f"No results matching query '{search_query}'"
+                        reason = f"No results matching query: '{search_query}'"
                         logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} failed: {reason}")
                         failed_sites[tracker_name] = reason
-                        continue
-                    data['data'] = filtered_results
+                        filtered_by_search = True
+                    else:
+                        data['data'] = filtered_results
 
-                # Check for missing media types
-                check_media_types(data, tracker_name)
+                if not filtered_by_search:
+                    logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} found data for TMDb ID {tmdb_id}")
 
-                # Display the API results in the console
-                display_api_results(logger, data, tracker_name)
-                successful_sites.append(tracker_name)
-                logger.info(f"{LOG_PREFIX_PROCESS} {tracker_name} found data for TMDb ID {tmdb_id}")
+                    # Check for missing media types if there is not a search query
+                    if not search_query:
+                        missing_media = check_media_types(logger, data, tracker_name, missing_media)
+                    else:
+                        logger.info(f"{LOG_PREFIX_PROCESS} Skipping missing media type check for {tracker_name} due to search query.")
+
+                    # Display the API results in the console
+                    display_api_results(logger, data, tracker_name)
+                    successful_sites.append(tracker_name)
             else:
                 # Log and continue if no matching results are found
                 reason = "No matching results"
@@ -182,24 +155,28 @@ def query_additional_apis(logger: logging.Logger, tmdb_id: str, title: str, sear
         time.sleep(1)  # Add a delay to prevent rate limiting
 
     if output_json:
+        logger.info(f"{LOG_PREFIX_JSON} Exporting tracker data to: {OUTPUT_DIR}")
         for data, tracker_code, tracker_name in collected_data:
             # Export data to JSON if JSON args is set
-            export_json(data, tracker_code, tracker_name)
+            export_json(logger, OUTPUT_DIR, data, tracker_code, tracker_name, tmdb_id)
 
     if failed_sites:
         # Create a table to display failed sites and their reasons
         failed_columns = [("Site", "bold yellow", "left"), ("Reason", "bold red", "left")]
         failed_rows = [(site, reason) for site, reason in failed_sites.items()]
-        failed_table = create_table("Failed Sites", failed_columns, failed_rows)
+        failed_table = create_table(logger, "Failed Sites", failed_columns, failed_rows)
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying failed sites.")
         console.print(failed_table)
 
-    if missing_media and not search_query:
+    if missing_media:
         # Create a table to display sites with missing media types
         missing_columns = [("Site", "bold yellow", "left"), ("Missing Media Types", "bold red", "left")]
         missing_rows = [(site, ", ".join(media_types)) for site, media_types in missing_media.items()]
-        missing_table = create_table("Missing Media Types", missing_columns, missing_rows)
+        missing_table = create_table(logger, "Missing Media Types", missing_columns, missing_rows)
+        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying sites with missing media types")
         console.print(missing_table)
 
     if not successful_sites:
+        logger.error(f"{LOG_PREFIX_OUTPUT} No successful queries.")
         # Print a message if no successful queries were made
         console.print("[bold red]No successful queries.[/bold red]")
