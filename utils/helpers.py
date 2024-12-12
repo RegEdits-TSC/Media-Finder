@@ -136,7 +136,7 @@ def create_table(logger: logging.Logger, title: str, columns: List[Tuple[str, st
         for row in rows:
             table.add_row(*row)
         
-        logger.info(f"{LOG_PREFIX_OUTPUT} Created table: {title}")
+        logger.info(f"{LOG_PREFIX_PROCESS} Created table: {title}")
         
         return table
     except Exception as e:
@@ -156,3 +156,23 @@ def export_json(logger: logging.Logger, OUTPUT_DIR: str, data: Dict[str, Any], t
         logger.error(f"I/O error: {e}")
     except Exception as e:
         logger.error(f"An unexpected error occurred: {e}")
+
+def display_failed_sites(logger, failed_sites: dict[str, str]) -> None:
+    """Display a table of failed sites and their reasons."""
+    try:
+        failed_columns = [("Site", "bold yellow", "left"), ("Reason", "bold red", "left")]
+        failed_rows = [(site, reason) for site, reason in failed_sites.items()]
+        failed_table = create_table(logger, "Failed Sites", failed_columns, failed_rows)
+        console.print(failed_table)
+    except Exception as e:
+        logger.error(f"Failed to display failed sites: {e}")
+
+def display_missing_media_types(logger, missing_media: dict[str, list[str]]) -> None:
+    """Display a table of sites with missing media types."""
+    try:
+        missing_columns = [("Site", "bold yellow", "left"), ("Missing Media Types", "bold red", "left")]
+        missing_rows = [(site, ", ".join(media_types)) for site, media_types in missing_media.items()]
+        missing_table = create_table(logger, "Missing Media Types", missing_columns, missing_rows)
+        console.print(missing_table)
+    except Exception as e:
+        logger.error(f"Failed to display missing media types: {e}")
