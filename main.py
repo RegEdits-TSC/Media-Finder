@@ -54,15 +54,18 @@ def perform_search(logger, args, tmdb_api_key, tmdb_url, trackers):
     # Search by TMDb ID if provided
     if args.id:
         tmdb_id = args.id.strip()
+        
         if not tmdb_id.isdigit():
             logger.error(f"{LOG_PREFIX_INPUT} TMDb ID must be a positive integer.")
             raise InvalidTMDbIDError("TMDb ID must be a positive integer.")
+        
         details = search_tmdb(logger, search_type, tmdb_api_key, tmdb_url, tmdb_id=tmdb_id)
     # Search by name if provided
     elif args.name:
         name = args.name
         results = search_tmdb(logger, search_type, tmdb_api_key, tmdb_url, name=name)
         selected_result = select_tmdb_result(logger, results)
+
         if selected_result:
             logger.info(f"{LOG_PREFIX_SEARCH} TMDb ID '{selected_result['id']}' found from search results.")
             details = search_tmdb(logger, search_type, tmdb_api_key, tmdb_url, tmdb_id=selected_result['id'])
@@ -75,7 +78,8 @@ def perform_search(logger, args, tmdb_api_key, tmdb_url, trackers):
 
     # Display the movie details
     title = display_movie_details(logger, details)
-    # Query additional APIs using the TMDb ID
+
+    # Query tracker APIs using the TMDb ID
     query_tracker_api(logger, details['id'], title, search_query, trackers, args.json, OUTPUT_DIR)
 
 def handle_errors(logger):
