@@ -22,6 +22,7 @@ API_KEYS = {
     "HDB_API_KEY": os.getenv('HDB_API_KEY'),
     "LST_API_KEY": os.getenv('LST_API_KEY'),
     "OTW_API_KEY": os.getenv('OTW_API_KEY'),
+    "OE_API_KEY": os.getenv('OE_API_KEY'),
     "PSS_API_KEY": os.getenv('PSS_API_KEY'),
     "RFX_API_KEY": os.getenv('RFX_API_KEY'),
     "ULCX_API_KEY": os.getenv('ULCX_API_KEY')
@@ -35,6 +36,7 @@ URLS = {
     "HDB_URL": os.getenv('HDB_URL'),
     "LST_URL": os.getenv('LST_URL'),
     "OTW_URL": os.getenv('OTW_URL'),
+    "OE_URL": os.getenv('OE_URL'),
     "PSS_URL": os.getenv('PSS_URL'),
     "RFX_URL": os.getenv('RFX_URL'),
     "ULCX_URL": os.getenv('ULCX_URL')
@@ -48,6 +50,7 @@ TRACKER_SITES = [
     ("HDB_API_KEY", "HDB_URL", "HDBits", "HDB"),
     ("LST_API_KEY", "LST_URL", "L0ST", "LST"),
     ("OTW_API_KEY", "OTW_URL", "OldToons.World", "OTW"),
+    ("OE_API_KEY", "OE_URL", "OnlyEncodes", "OE"),
     ("PSS_API_KEY", "PSS_URL", "PrivateSilverScreen", "PSS"),
     ("RFX_API_KEY", "RFX_URL", "ReelFliX", "RFX"),
     ("ULCX_API_KEY", "ULCX_URL", "Upload.cx", "ULCX")
