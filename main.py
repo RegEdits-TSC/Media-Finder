@@ -6,12 +6,20 @@ from cmds.processing import select_tmdb_result
 from cmds.api_commands import search_tmdb, query_tracker_api
 from rich.console import Console
 from utils.exceptions import MissingArgumentError, InvalidTMDbIDError, NoSuitableResultError
+import logging
+from logging import NullHandler
 
 console = Console()
 
 # Determine the directory of the script and the output folder
 SCRIPT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = SCRIPT_DIR / "logs"
+
+def get_null_logger():
+    """Returns a no-op logger to avoid attribute errors when logging is disabled."""
+    logger = logging.getLogger("null_logger")
+    logger.addHandler(NullHandler())
+    return logger
 
 def setup(args, logger):
     """Setup logging and environment variables."""
@@ -118,14 +126,41 @@ def main() -> None:
     console.print("")
     console.rule("[bold green]Script execution completed.[/bold green]", align="center")
 
-    logger.info(f"{LOG_PREFIX_SUMMARY} Total warnings: {counting_handler.warning_count}")
-    logger.info(f"{LOG_PREFIX_SUMMARY} Total errors: {counting_handler.error_count}")
+    # Log summary only if counting_handler exists
+    if counting_handler:
+        logger.info(f"{LOG_PREFIX_SUMMARY} Total warnings: {counting_handler.warning_count}")
+        logger.info(f"{LOG_PREFIX_SUMMARY} Total errors: {counting_handler.error_count}")
 
 if __name__ == "__main__":
     # Parse command-line arguments
     args = parse_arguments()
 
-    # Setup logging and execute the main function
-    logger, counting_handler = setup_logging(OUTPUT_DIR, debug_mode=args.debug, sensitive_values=list(API_KEYS.values()))
-    main = handle_errors(logger)(main)
-    main()
+    # Setup logging based on command-line arguments
+    logger_data = setup_logging(
+        OUTPUT_DIR, 
+        enable_logging=args.logging, 
+        debug_mode=args.debug, 
+        sensitive_values=list(API_KEYS.values())
+    )
+
+    # Handle cases where logging is disabled
+    if logger_data:
+        logger, counting_handler = logger_data
+    else:
+        logger = get_null_logger()
+        counting_handler = None
+
+    # Wrap the main function with error handling
+    main_with_logging = handle_errors(logger)(main)
+
+    # Execute the main function
+    try:
+        main_with_logging()
+    except Exception as e:
+        if logger and isinstance(logger.handlers[0], NullHandler):
+            # Logging is disabled; print error to the console
+            console.print(f"[bold red]Unhandled exception occurred:[/bold red] {str(e)}")
+        else:
+            # Log the error if logging is enabled
+            logger.error("Unhandled exception occurred:", exc_info=True)
+        raise  # Re-raise the exception for visibility

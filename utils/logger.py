@@ -29,11 +29,18 @@ class RedactingSensitiveInformation(logging.Formatter):
         message = super().format(record)
         for value in self.sensitive_values:
             if value:
-                api_key_pattern = rf"(api_key=){re.escape(value)}"
-                message = re.sub(api_key_pattern, r"\1[REDACTED]", message)
+                # Match sensitive values in different formats
+                patterns = [
+                    rf"\b{re.escape(value)}\b",  # Exact match
+                    rf"(['\"]{re.escape(value)}['\"])",  # JSON-like match
+                    rf"(api_key=){re.escape(value)}"  # Key-value pair match
+                ]
+                for pattern in patterns:
+                    message = re.sub(pattern, r"[REDACTED]", message)
         return message
-    
+
 class CountingHandler(logging.Handler):
+    """Custom handler to count log levels."""
     def __init__(self):
         super().__init__()
         self.error_count = 0
@@ -45,8 +52,12 @@ class CountingHandler(logging.Handler):
         elif record.levelno == logging.WARNING:
             self.warning_count += 1
 
-def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
+def setup_logging(output_dir: str, enable_logging: bool = False, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
     """Setup logging configuration with sensitive information redaction."""
+    if not enable_logging:
+        # Logging is disabled
+        return None
+
     # Ensure the output directory exists
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -56,42 +67,43 @@ def setup_logging(output_dir: str, debug_mode: bool = False, sensitive_values: O
     log_filename = now.strftime(f"{log_prefix}media_log-%H_%M_%S_%m_%d_%Y.log")
     log_filepath = Path(output_dir) / log_filename
 
-    # Set log level
-    log_level = logging.DEBUG if debug_mode else logging.INFO
-
-    # Create a logger
+    # Create the root logger
     logger = logging.getLogger()
-    logger.setLevel(log_level)
+    logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
-    # Create file handler
-    file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
-    file_handler.setLevel(log_level)
+    # Avoid duplicate handlers
+    if not any(isinstance(handler, logging.FileHandler) for handler in logger.handlers):
+        # Create a file handler
+        file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
+        file_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
-    # Create formatter and add it to the handlers
-    formatter = RedactingSensitiveInformation(
-        fmt='%(asctime)s - %(levelname)s - %(message)s',
-        sensitive_values=sensitive_values
-    )
-    file_handler.setFormatter(formatter)
+        # Create formatter and add it to the handler
+        formatter = RedactingSensitiveInformation(
+            fmt='%(asctime)s - %(levelname)s - %(message)s',
+            sensitive_values=sensitive_values
+        )
+        file_handler.setFormatter(formatter)
 
-    # Add file handler to the logger
-    logger.addHandler(file_handler)
+        # Add the handler to the logger
+        logger.addHandler(file_handler)
 
-    # Create and add the counting handler
+    # Add a custom counting handler
     counting_handler = CountingHandler()
-    logger.addHandler(counting_handler)
+    if not any(isinstance(handler, CountingHandler) for handler in logger.handlers):
+        logger.addHandler(counting_handler)
 
-    # Redacting formatter for urllib3 logs
+    # Redirect third-party library logs to the same file
     if sensitive_values:
         urllib3_logger = logging.getLogger("urllib3")
         urllib3_logger.handlers.clear()
         urllib3_logger.addHandler(file_handler)
-        urllib3_logger.setLevel(log_level)
+        urllib3_logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
         urllib3_logger.propagate = False
 
     # Log initialization messages
     logger.info(f"{LOG_PREFIX_TASK} Logging initialized.")
     if debug_mode:
         logger.debug(f"{LOG_PREFIX_TASK} Debug mode enabled. All responses and execution steps will be logged.")
+    logger.info(f"{LOG_PREFIX_TASK} Log file created: {log_filepath.resolve()}")
 
     return logger, counting_handler
