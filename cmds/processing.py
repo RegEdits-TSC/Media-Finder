@@ -99,29 +99,53 @@ def select_tmdb_result(logger: logging.Logger, results):
 def check_media_types(logger: logging.Logger, data: Dict[str, Any], tracker_name: str, missing_media) -> Dict[str, List[str]]:
     """Check for missing media types in the results."""
     # Define media types
-    MEDIA_TYPES = {"REMUX", "WEB-DL", "Encode", "Full Disc", "WEBip"}
+    MEDIA_TYPES = {
+        "REMUX": {"remux"},
+        "WEB-DL": {"web-dl"},
+        "Encode": {"encode", "x264 encode", "x265 encode"},
+        "Full Disc": {"full disc", "full disk"},
+        "WEBip": {"webip"},
+        "HDTV": {"hdtv"}
+    }
 
     try:
-        # Check for missing media types
-        logger.info(f"{LOG_PREFIX_PROCESS} Checking missing media types for {tracker_name}...")
+            # Log start of process
+            logger.info(f"{LOG_PREFIX_PROCESS} Checking missing media types for {tracker_name}...")
 
-        site_media_types = [item['attributes']['type'] for item in data['data'] if 'type' in item['attributes']]
-        for media_type in MEDIA_TYPES:
-            if not any(
-                media_type.lower() in item['attributes']['name'].lower() or
-                media_type.lower() == t.lower()
-                for item in data['data'] for t in site_media_types
-            ):
-                if tracker_name not in missing_media:
-                    missing_media[tracker_name] = []
-                missing_media[tracker_name].append(media_type)
-                logger.info(f"{LOG_PREFIX_PROCESS} Media type '{media_type}' not found on {tracker_name}")
-        return missing_media
+            # Extract all media types found on the tracker site
+            site_media_types = [
+                item['attributes']['type'].lower()
+                for item in data['data']
+                if 'type' in item['attributes']
+            ]
+
+            # Track and log unknown media types
+            unknown_media_types = set(site_media_types) - set(
+                synonym for synonyms in MEDIA_TYPES.values() for synonym in synonyms
+            )
+            if unknown_media_types:
+                logger.warning(f"{LOG_PREFIX_PROCESS} Unknown media types on {tracker_name}: {unknown_media_types}")
+
+            # Normalize media types into categories
+            found_categories = set()
+            for site_type in site_media_types:
+                for category, synonyms in MEDIA_TYPES.items():
+                    if site_type in synonyms or any(synonym in site_type for synonym in synonyms):
+                        found_categories.add(category)
+
+            # Check for missing media types
+            for category in MEDIA_TYPES.keys():
+                if category not in found_categories:
+                    if tracker_name not in missing_media:
+                        missing_media[tracker_name] = []
+                    missing_media[tracker_name].append(category)
+                    logger.info(f"{LOG_PREFIX_PROCESS} Media type '{category}' not found on {tracker_name}")
+
+            return missing_media
     except KeyError as e:
         logger.error(f"{LOG_PREFIX_PROCESS} KeyError: {e}")
     except Exception as e:
-        logger.error(f"{LOG_PREFIX_PROCESS} An unexpected error occurred: {e}")
-    
+        logger.error(f"{LOG_PREFIX_PROCESS} An unexpected error occurred: {e}")    
 
 def filter_results(logger: logging.Logger, data: Dict[str, Any], search_query: str) -> List[Dict[str, Any]]:
     """Filter the results based on the search query."""
