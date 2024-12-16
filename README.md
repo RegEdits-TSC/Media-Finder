@@ -76,6 +76,10 @@ python main.py --env [--overwrite]
 ```bash
 python main.py --logging
 ```
+**OR**
+```bash
+python main.py --logging --debug
+```
 
 **Media Search Options:**
 > [!CAUTION]
@@ -119,7 +123,7 @@ python main.py --json
 ```
 
 ### Example Usage
-**Search for a Movie by Name:**
+**Search for a Movie by Name with Search Query:**
 ```bash
 python main.py --movies --name Godzilla King of the Monsters --search "2160p^Framestor"
 ```
