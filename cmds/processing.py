@@ -1,10 +1,10 @@
 # Standard Library Imports
 import logging
 import sys
+from typing import Any, Dict, List, Optional
 
 # Third-Party Imports
 from rich.console import Console
-from typing import Any, Dict, List, Optional
 
 # Local Imports
 from utils.exceptions import InvalidChoiceError, NoResultsError

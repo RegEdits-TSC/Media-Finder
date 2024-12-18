@@ -4,11 +4,11 @@ import logging
 import time
 from pathlib import Path
 from urllib.parse import urljoin
+from typing import Optional, Dict, Any, List
 
 # Third-Party Imports
 import requests
 from rich.console import Console
-from typing import Optional, Dict, Any, List
 
 # Local Imports
 from cmds.processing import check_media_types, filter_results
