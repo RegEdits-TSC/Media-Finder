@@ -104,7 +104,7 @@ def check_media_types(logger: logging.Logger, data: Dict[str, Any], tracker_name
         "WEB-DL": {"web-dl"},
         "Encode": {"encode", "x264 encode", "x265 encode"},
         "Full Disc": {"full disc", "full disk"},
-        "WEBip": {"webip"},
+        "WEBRip": {"webrip", "web-rip"},
         "HDTV": {"hdtv"}
     }
 
