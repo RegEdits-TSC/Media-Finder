@@ -17,7 +17,6 @@ from utils.logger import (
     LOG_PREFIX_SAVE,
 )
 
-
 console = Console()
 
 def parse_arguments() -> argparse.Namespace:
