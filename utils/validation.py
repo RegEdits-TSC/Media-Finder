@@ -54,7 +54,6 @@ TRACKER_SITES = [
 def validate_env_vars(logger: logging.Logger) -> dict:
     """
     Validate that required environment variables are set.
-
     Returns:
         A dictionary containing validated required environment variables and trackers.
     """
