@@ -317,13 +317,13 @@ def export_json(
         logger.info(f"{LOG_PREFIX_SAVE} Exported {tracker_name} ({tracker_code}) data to {filename}")
 
     except FileNotFoundError as e:
-        logger.error(f"{LOG_PREFIX_SAVE} FileNotFoundError during export: {e}")
+        logger.error(f"{LOG_PREFIX_JSON} FileNotFoundError during export: {e}")
 
     except IOError as e:
-        logger.error(f"{LOG_PREFIX_SAVE} IOError during export: {e}")
+        logger.error(f"{LOG_PREFIX_JSON} IOError during export: {e}")
 
     except Exception as e:
-        logger.error(f"{LOG_PREFIX_SAVE} Unexpected error during export: {e}")
+        logger.error(f"{LOG_PREFIX_JSON} Unexpected error during export: {e}")
 
 def display_failed_sites(logger: logging.Logger, failed_sites: Dict[str, str]) -> None:
     """

@@ -248,14 +248,22 @@ def query_tracker_api(
         for data, tracker_code, tracker_name in collected_data:
             export_json(logger, OUTPUT_DIR, data, tracker_code, tracker_name, tmdb_id)
 
+    logger.info(f"{LOG_PREFIX_PROCESS} Checking for failed sites...")
+
     # Display results summary
     if failed_sites:
+        logger.info(f"{LOG_PREFIX_PROCESS} Gathering failed sites...")
         display_failed_sites(logger, failed_sites)
-        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying failed sites table.")
+    else:
+        logger.info(f"{LOG_PREFIX_PROCESS} No failed sites found.")
     
+    logger.info(f"{LOG_PREFIX_PROCESS} Checking for missing media types...")
+
     if missing_media:
+        logger.info(f"{LOG_PREFIX_PROCESS} Gathering missing media types...")
         display_missing_media_types(logger, missing_media)
-        logger.info(f"{LOG_PREFIX_OUTPUT} Displaying sites with missing media types table.")
+    else:
+        logger.info(f"{LOG_PREFIX_PROCESS} All media types found on configured sites.")
 
     if not successful_sites:
         logger.error(f"{LOG_PREFIX_OUTPUT} No successful queries.")
