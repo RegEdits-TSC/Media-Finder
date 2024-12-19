@@ -20,9 +20,9 @@ load_dotenv(dotenv_path=Path("config/.env"))
 # Tracker site configurations
 TRACKER_CONFIG = [
     {"key": "ATH", "name": "Aither"},
+    {"key": "BHD", "name": "BeyondHD"},
     {"key": "BLU", "name": "Blutopia"},
     {"key": "FNP", "name": "FearNoPeer"},
-    {"key": "HDB", "name": "HDBits"},
     {"key": "LDU", "name": "TheLDU"},
     {"key": "LST", "name": "L0ST"},
     {"key": "OTW", "name": "OldToons.World"},
