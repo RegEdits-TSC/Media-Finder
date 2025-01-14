@@ -78,8 +78,46 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Overwrite the existing .env file if it exists."
     )
+    parser.add_argument(
+        "--type",
+        type=validate_media_type,
+        help="Search for only the specific media type.",
+    )
 
     return parser.parse_args()
+
+def validate_media_type(value: str) -> str:
+    """
+    Validate and normalize the media type.
+
+    Args:
+        value (str): The media type input from the user.
+
+    Returns:
+        str: The validated media type in its canonical form.
+
+    Raises:
+        argparse.ArgumentTypeError: If the input is not a valid media type.
+    """
+    # Define allowed types and their canonical forms
+    allowed_types = {
+        "remux": "Remux",
+        "web-dl": "WEB-DL",
+        "encode": "Encode",
+        "full disc": "Full Disc",
+        "webrip": "WEBRip",
+        "hdtv": "HDTV",
+    }
+
+    # Normalize input for validation
+    value_lower = value.lower()
+    if value_lower not in allowed_types:
+        raise argparse.ArgumentTypeError(
+            f"Invalid media type: {value}. Allowed types are: {', '.join(allowed_types.values())}"
+        )
+
+    # Return the canonical form
+    return allowed_types[value_lower]
 
 def display_movie_details(logger: logging.Logger, details: Dict[str, Any]) -> Optional[str]:
     """

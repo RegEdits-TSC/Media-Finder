@@ -32,6 +32,16 @@ TRACKER_CONFIG = [
     {"key": "ULCX", "name": "Upload.cx"},
 ]
 
+# Define media type categories and their synonyms
+MEDIA_TYPES = {
+    "REMUX": {"remux"},
+    "WEB-DL": {"web-dl"},
+    "Encode": {"encode", "x264 encode", "x265 encode"},
+    "Full Disc": {"full disc", "full disk"},
+    "WEBRip": {"webrip", "web-rip"},
+    "HDTV": {"hdtv"},
+}
+
 # Dynamically build API Keys and URLs from tracker configurations
 API_KEYS = {f"{site['key']}_API_KEY": os.getenv(f"{site['key']}_API_KEY") for site in TRACKER_CONFIG}
 URLS = {f"{site['key']}_URL": os.getenv(f"{site['key']}_URL") for site in TRACKER_CONFIG}

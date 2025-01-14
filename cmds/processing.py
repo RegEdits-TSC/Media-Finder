@@ -15,6 +15,7 @@ from utils.logger import (
     LOG_PREFIX_PROCESS,
     LOG_PREFIX_SEARCH,
 )
+from utils.validation import MEDIA_TYPES
 
 console = Console()
 
@@ -160,15 +161,6 @@ def check_media_types(
     Returns:
         Updated dictionary of missing media types.
     """
-    # Define media type categories and their synonyms
-    MEDIA_TYPES = {
-        "REMUX": {"remux"},
-        "WEB-DL": {"web-dl"},
-        "Encode": {"encode", "x264 encode", "x265 encode"},
-        "Full Disc": {"full disc", "full disk"},
-        "WEBRip": {"webrip", "web-rip"},
-        "HDTV": {"hdtv"},
-    }
 
     try:
         # Log start of the media type check process
@@ -210,23 +202,53 @@ def check_media_types(
         logger.error(f"{LOG_PREFIX_PROCESS} Unexpected error while processing {tracker_name}: {e}")
         return missing_media   
 
-def filter_results(logger: logging.Logger, data: Dict[str, Any], search_query: str) -> List[Dict[str, Any]]:
+def filter_results(
+    logger: logging.Logger, 
+    data: Dict[str, Any], 
+    search_query: Optional[str] = None, 
+    media_type: Optional[str] = None
+) -> List[Dict[str, Any]]:
     """
-    Filter the results based on the search query.
+    Filter the results based on the search query and/or media type.
+
+    Args:
+        logger (logging.Logger): Logger instance for logging operations.
+        data (Dict[str, Any]): The data to filter.
+        search_query (Optional[str]): The search query to filter results by attributes.name.
+        media_type (Optional[str]): The media type to filter results by attributes.type.
+
     Returns:
-        A list of filtered results matching the search query.
+        List[Dict[str, Any]]: A list of filtered results matching the criteria.
     """
     try:
         # Parse search query terms
-        terms = [term.strip().lower() for term in search_query.split("^")]
+        query_terms = (
+            [term.strip().lower() for term in search_query.split("^")]
+            if search_query
+            else []
+        )
 
         # Filter results
-        results = [
-            item for item in data.get("data", [])
-            if all(term in item.get("attributes", {}).get("name", "").lower() for term in terms)
-        ]
+        results = []
+        for item in data.get("data", []):
+            attributes = item.get("attributes", {})
+            name = attributes.get("name", "").lower()
+            type_ = attributes.get("type", "").lower()
 
-        logger.info(f"{LOG_PREFIX_SEARCH} Filtered {len(results)} result(s) based on query: {search_query}")
+            # Check search query terms
+            query_match = all(term in name for term in query_terms) if query_terms else True
+
+            # Check media type
+            type_match = media_type.lower() == type_ if media_type else True
+
+            # Include item if both conditions match
+            if query_match and type_match:
+                results.append(item)
+
+        logger.info(
+            f"{LOG_PREFIX_SEARCH} Filtered {len(results)} result(s) "
+            f"based on query: '{search_query}' and media type: '{media_type}'"
+        )
         return results
 
     except KeyError as e:

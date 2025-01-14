@@ -144,6 +144,7 @@ def query_tracker_api(
     tmdb_id: str,
     title: str,
     search_query: Optional[str] = None,
+    media_type: Optional[str] = None,
     trackers: Optional[List[Dict[str, str]]] = None,
     output_json: Optional[bool] = None,
     OUTPUT_DIR: Optional[Path] = None,
@@ -167,8 +168,12 @@ def query_tracker_api(
 
     # Display search banner
     search_banner = (
-        f"Searching trackers for {title} with search query '{search_query}'"
+        f"Searching trackers for {title} with search query '{search_query}' for media type '{media_type}'"
+        if search_query and media_type
+        else f"Searching trackers for {title} with search query '{search_query}'"
         if search_query
+        else f"Searching trackers for {title} for media type '{media_type}'"
+        if media_type
         else f"Searching trackers for {title}"
     )
     console.rule(f"[bold yellow]{search_banner}[/bold yellow]", align="center")
@@ -220,15 +225,29 @@ def query_tracker_api(
     # Helper: Process tracker data
     def process_tracker_data(tracker_name: str, data: Dict[str, Any]) -> None:
         if data and "data" in data and data["data"]:
-            if search_query:
-                filtered_results = filter_results(logger, data, search_query)
+            # Check if filtering is needed based on search_query and/or media_type
+            if search_query or media_type:
+                # Apply filters
+                filtered_results = filter_results(logger, data, search_query, media_type)
+                
+                # Handle no results after filtering
                 if not filtered_results:
-                    logger.info(f"{LOG_PREFIX_PROCESS} No results matching '{search_query}' on {tracker_name}.")
-                    failed_sites[tracker_name] = f"No results matching '{search_query}'"
+                    reason = []
+                    if search_query:
+                        reason.append(f"matching search query '{search_query}'")
+                    if media_type:
+                        reason.append(f"of media type '{media_type}'")
+                    reason_str = " and ".join(reason)
+
+                    logger.info(f"{LOG_PREFIX_PROCESS} No results found on {tracker_name}: {reason_str}.")
+                    failed_sites[tracker_name] = f"No results {reason_str}"
                     return
+                
+                # Update data with filtered results
                 data["data"] = filtered_results
 
-            if not search_query:
+            else:
+                # Only check media types when neither search_query nor media_type is set
                 check_media_types(logger, data, tracker_name, missing_media)
 
             display_api_results(logger, data, tracker_name)

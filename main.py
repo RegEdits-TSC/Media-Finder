@@ -83,12 +83,15 @@ def perform_search(logger, args, tmdb_api_key, tmdb_url, trackers):
     else:
         logger.error(f"{LOG_PREFIX_INPUT} Please specify either --id or --name to search.")
         raise MissingArgumentError("Please specify either --id or --name to search.")
+    
+    # Set media_type if arg is passed
+    media_type = args.type
 
     # Display the movie details
     title = display_movie_details(logger, details)
 
     # Query tracker APIs using the TMDb ID
-    query_tracker_api(logger, details['id'], title, search_query, trackers, args.json, OUTPUT_DIR)
+    query_tracker_api(logger, details['id'], title, search_query, media_type, trackers, args.json, OUTPUT_DIR)
 
 def handle_errors(logger):
     """Decorator to handle errors."""
