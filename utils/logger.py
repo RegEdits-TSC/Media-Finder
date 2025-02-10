@@ -52,7 +52,7 @@ class CountingHandler(logging.Handler):
         elif record.levelno == logging.WARNING:
             self.warning_count += 1
 
-def setup_logging(output_dir: str, enable_logging: bool = False, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
+def setup_logging(output_dir: Path, enable_logging: bool = False, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
     """Setup logging configuration with sensitive information redaction."""
     if not enable_logging:
         # Logging is disabled

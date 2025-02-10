@@ -33,7 +33,6 @@ def setup(args, logger):
     # Retrieve valid tracker API key and URL pairs
     trackers = env_vars["trackers"]
     for tracker in trackers:
-        api_key = tracker["api_key"]
         url = tracker["url"]
         tracker_name = tracker["name"]
         tracker_code = tracker["code"]
@@ -98,7 +97,7 @@ def handle_errors(logger):
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
-                return func(*args, **kwargs)
+                return func(*args, **kwargs)  # Allow any arguments
             except MissingArgumentError as e:
                 logger.error(f"{LOG_PREFIX_INPUT} {str(e)}")
                 console.print(f"[bold red]Error:[/bold red] {str(e)}")
@@ -111,6 +110,9 @@ def handle_errors(logger):
             except ValueError as e:
                 logger.error(f"{LOG_PREFIX_INPUT} {str(e)}")
                 console.print(f"[bold red]Error:[/bold red] {str(e)}")
+            except Exception as e:
+                logger.error(f"{LOG_PREFIX_INPUT} An unexpected error occurred: {str(e)}")
+                console.print(f"[bold red]Unexpected Error:[/bold red] {str(e)}")
         return wrapper
     return decorator
 
@@ -140,7 +142,7 @@ if __name__ == "__main__":
 
     # Setup logging based on command-line arguments
     logger_data = setup_logging(
-        OUTPUT_DIR, 
+        OUTPUT_DIR,
         enable_logging=args.logging, 
         debug_mode=args.debug, 
         sensitive_values=list(API_KEYS.values())
