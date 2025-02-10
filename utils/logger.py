@@ -52,10 +52,14 @@ class CountingHandler(logging.Handler):
         elif record.levelno == logging.WARNING:
             self.warning_count += 1
 
-def setup_logging(output_dir: Path, enable_logging: bool = False, debug_mode: bool = False, sensitive_values: Optional[List[str]] = None) -> Tuple[logging.Logger, CountingHandler]:
+def setup_logging(
+    output_dir: Path,
+    enable_logging: bool = False,
+    debug_mode: bool = False,
+    sensitive_values: Optional[List[str]] = None
+) -> Tuple[logging.Logger, 'CountingHandler']:
     """Setup logging configuration with sensitive information redaction."""
     if not enable_logging:
-        # Logging is disabled
         return None
 
     # Ensure the output directory exists
@@ -69,30 +73,35 @@ def setup_logging(output_dir: Path, enable_logging: bool = False, debug_mode: bo
 
     # Create the root logger
     logger = logging.getLogger()
+
+    # --- Remove existing FileHandler instances ---
+    for handler in logger.handlers[:]:
+        if isinstance(handler, logging.FileHandler):
+            logger.removeHandler(handler)
+
+    # Optionally, remove existing CountingHandler instances as well
+    for handler in logger.handlers[:]:
+        if handler.__class__.__name__ == "CountingHandler":  # or isinstance(handler, CountingHandler) if imported
+            logger.removeHandler(handler)
+
+    # Set the logger level based on debug_mode
     logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
-    # Avoid duplicate handlers
-    if not any(isinstance(handler, logging.FileHandler) for handler in logger.handlers):
-        # Create a file handler
-        file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
-        file_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+    # Create and add a new FileHandler with the appropriate level and formatter
+    file_handler = logging.FileHandler(log_filepath, encoding='utf-8')
+    file_handler.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
-        # Create formatter and add it to the handler
-        formatter = RedactingSensitiveInformation(
-            fmt='%(asctime)s - %(levelname)s - %(message)s',
-            sensitive_values=sensitive_values
-        )
-        file_handler.setFormatter(formatter)
+    formatter = RedactingSensitiveInformation(
+        fmt='%(asctime)s - %(levelname)s - %(message)s',
+        sensitive_values=sensitive_values
+    )
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-        # Add the handler to the logger
-        logger.addHandler(file_handler)
-
-    # Add a custom counting handler
+    # Create and add a new CountingHandler
     counting_handler = CountingHandler()
-    if not any(isinstance(handler, CountingHandler) for handler in logger.handlers):
-        logger.addHandler(counting_handler)
+    logger.addHandler(counting_handler)
 
-    # Redirect third-party library logs to the same file
     if sensitive_values:
         urllib3_logger = logging.getLogger("urllib3")
         urllib3_logger.handlers.clear()
