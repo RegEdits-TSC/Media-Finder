@@ -141,7 +141,7 @@ def validate_env_vars(logger: logging.Logger) -> dict:
 
 def setup_environment(overwrite: bool, logger: logging.Logger) -> dict:
     """
-    Setup the environment by creating or validating the .env file.
+    Set up the environment by creating or validating the .env file.
     Returns:
         A dictionary containing the validated environment variables.
     """

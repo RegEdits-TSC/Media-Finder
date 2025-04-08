@@ -1,5 +1,6 @@
 import logging
 import re
+from logging import Logger
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -57,7 +58,7 @@ def setup_logging(
     enable_logging: bool = False,
     debug_mode: bool = False,
     sensitive_values: Optional[List[str]] = None
-) -> Tuple[logging.Logger, 'CountingHandler']:
+) -> tuple[Logger, CountingHandler] | None:
     """Setup logging configuration with sensitive information redaction."""
     if not enable_logging:
         return None
