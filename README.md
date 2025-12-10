@@ -162,7 +162,6 @@ FNP_API_KEY=<your_fnp_api_key>
 HDB_API_KEY=<your_hdb_api_key>
 LST_API_KEY=<your_lst_api_key>
 OTW_API_KEY=<your_otw_api_key>
-PSS_API_KEY=<your_pss_api_key>
 RFX_API_KEY=<your_rfx_api_key>
 ULCX_API_KEY=<your_ulcx_api_key>
 
@@ -173,8 +172,7 @@ FNP_URL=https://fearnopeer.com/api/torrents/filter
 HDB_URL=https://hdbits.org/api/torrents/filter
 LST_URL=https://lst.gg/api/torrents/filter
 OTW_URL=https://oldtoons.world/api/torrents/filter
-PSS_URL=https://privatesilverscreen.cc/api/torrents/filter
-RFX_URL=https://reelflix.xyz/api/torrents/filter
+RFX_URL=https://reelflix.cc/api/torrents/filter
 ULCX_URL=https://upload.cx/api/torrents/filter
 ```
 
