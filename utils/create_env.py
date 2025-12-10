@@ -30,7 +30,6 @@ ENV_CONTENT = dedent("""
     LST_API_KEY=
     OTW_API_KEY=
     OE_API_KEY=
-    PSS_API_KEY=
     RFX_API_KEY=
     ULCX_API_KEY=
 
@@ -43,8 +42,7 @@ ENV_CONTENT = dedent("""
     LST_URL=https://lst.gg/api/torrents/filter
     OTW_URL=https://oldtoons.world/api/torrents/filter
     OE_URL=https://onlyencodes.cc/api/torrents/filter
-    PSS_URL=https://privatesilverscreen.cc/api/torrents/filter
-    RFX_URL=https://reelflix.xyz/api/torrents/filter
+    RFX_URL=https://reelflix.cc/api/torrents/filter
     ULCX_URL=https://upload.cx/api/torrents/filter
 """)
 

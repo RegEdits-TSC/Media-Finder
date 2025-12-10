@@ -27,7 +27,6 @@ TRACKER_CONFIG = [
     {"key": "LST", "name": "L0ST"},
     {"key": "OTW", "name": "OldToons.World"},
     {"key": "OE", "name": "OnlyEncodes"},
-    {"key": "PSS", "name": "PrivateSilverScreen"},
     {"key": "RFX", "name": "ReelFliX"},
     {"key": "ULCX", "name": "Upload.cx"},
 ]
